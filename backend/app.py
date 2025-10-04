@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 import base64
 import io
 from PIL import Image
@@ -6,6 +6,13 @@ import time
 import os
 
 app = Flask(__name__)
+
+VIDEO_DIR = './video_generator/media/videos/render_scene/1080p60'
+
+# Route to get a video by filename
+@app.route('/get_video/<filename>')
+def get_video(filename):
+    return send_from_directory(VIDEO_DIR, filename)
 
 # Create directory for storing processed images
 UPLOAD_DIR = 'processed_images'
