@@ -13,13 +13,13 @@ def compile_manim(json_path: Path, quality: str = "h", out_name: str = None) -> 
     out_path = BUILD / f"{out_name}.mp4"
 
     env = os.environ.copy()
-    # Make 100% sure TeX is on PATH for the manim subprocess
+    # Make 100% sure TeX is on PATH for the video_generator subprocess
     texbin = "/Library/TeX/texbin"
     env["PATH"] = f"{texbin}:{env.get('PATH','')}"
     env["LESSON_JSON"] = str(json_path.resolve())
 
     cmd = [
-        "manim", f"-q{quality}", "-o", out_path.name,
+        "video_generator", f"-q{quality}", "-o", out_path.name,
         "render_scene.py", "LessonScene",
         "--disable_caching"
     ]
