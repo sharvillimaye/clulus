@@ -64,11 +64,12 @@ SYSTEM_INSTRUCTION = (
     "to provide a structured response with a title and step-by-step solution.\n"
     "CRITICAL RULES:\n"
     "1. Use simple LaTeX and keep each step concise and purely mathematical.\n"
-    "2. For questions involving functions (like derivatives), use `function_plots` to plot BOTH the original function and the final result (max 2 plots). Label them appropriately (e.g., 'f(x)' and 'f\\'(x)').\n"
-    "3. The `steps` array must contain a maximum of 3 steps.\n"
-    "4. Each string in the `steps` array must be a maximum of 85 characters long.\n"
-    "5. Each string in the `steps` array must be a complete math expression and MUST NOT be wrapped in '$' or '$$'.\n"
-    "6. The title can contain inline '$...$' math, but the steps cannot."
+    "2. For questions involving functions (like derivatives and indefinite integrals), use `function_plots` to plot BOTH the original function and the final result (max 2 plots). Label them appropriately (e.g., 'f(x)' and 'f\\'(x)').\n"
+    "3. For questions involving functions with intercepts, use `function_plots` to plot ONLY the original function.\n"
+    "4. The `steps` array must contain a maximum of 3 steps.\n"
+    "5. Each string in the `steps` array must be a maximum of 85 characters long.\n"
+    "6. Each string in the `steps` array must be a complete math expression and MUST NOT be wrapped in '$' or '$$'.\n"
+    "7. The title can contain inline '$...$' math, but the steps cannot."
 )
 
 # --- 5) Few-shot examples (No changes needed, they perfectly demonstrate when to plot) ---
@@ -115,7 +116,15 @@ FEW_SHOT = [
                     r"x^2-5x+6=0",
                     r"(x-2)(x-3)=0",
                     r"x=2 \text{ or } x=3"
-                ]
+                ],
+                "function_plots": [
+                    {
+                        "expression": "x**2 - 5*x + 6",
+                        "label": "f(x) = x^2 - 5x + 6"
+                    }
+                ],
+                "x_min": 0,
+                "x_max": 5
             })
         }],
     },

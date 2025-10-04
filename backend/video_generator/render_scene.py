@@ -112,6 +112,9 @@ class LessonScene(Scene):
                 self.play(Indicate(step, scale_factor=1.1), run_time=0.6)
                 self.wait(0.2)
 
+        self.play(FadeOut(title, lines))
+        self.wait(0.5)  # A brief pause for transition
+
         # Optional graph (DROP-IN REPLACEMENT)
         if lesson.function_plots:
             PLOT_COLORS = [BLUE, GREEN]  # Colors for the 1st and 2nd plot
