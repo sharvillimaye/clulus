@@ -45,6 +45,42 @@ JSON_SCHEMA: Dict[str, Any] = {
                 "required": ["expression", "label"]
             }
         },
+        "geometric_shapes": {
+            "type": "array",
+            "description": "A list of geometric shapes to render for geometric problems (squares, circles, triangles, etc.).",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "shape_type": {
+                        "type": "string",
+                        "enum": ["square", "circle", "triangle", "rectangle", "polygon", "line", "arrow"],
+                        "description": "The type of geometric shape to render"
+                    },
+                    "label": {"type": "string", "description": "The LaTeX label for the shape, e.g., 'Square ABCD'."},
+                    "position": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "description": "Center position [x, y] for the shape (exactly 2 numbers)"
+                    },
+                    "size": {"type": "number", "description": "Size parameter (radius for circle, side length for square, etc.)"},
+                    "width": {"type": "number", "description": "Width for rectangle (if different from size)"},
+                    "height": {"type": "number", "description": "Height for rectangle (if different from size)"},
+                    "vertices": {
+                        "type": "array",
+                        "description": "Custom vertices for polygon [[x1,y1], [x2,y2], ...]",
+                        "items": {
+                            "type": "array",
+                            "items": {"type": "number"},
+                            "description": "Vertex coordinates [x, y]"
+                        }
+                    },
+                    "color": {"type": "string", "description": "Color name for the shape"},
+                    "fill_opacity": {"type": "number", "description": "Fill opacity (0-1)"},
+                    "stroke_width": {"type": "number", "description": "Stroke width for the shape outline"}
+                },
+                "required": ["shape_type", "label", "position"]
+            }
+        },
         "x_min": {
             "type": "number",
             "description": "The minimum value for the plot's x-axis. Required if plots are provided."
@@ -66,10 +102,11 @@ SYSTEM_INSTRUCTION = (
     "1. Use simple LaTeX and keep each step concise and purely mathematical.\n"
     "2. For questions involving functions (like derivatives and indefinite integrals), use `function_plots` to plot BOTH the original function and the final result (max 2 plots). Label them appropriately (e.g., 'f(x)' and 'f\\'(x)').\n"
     "3. For questions involving functions with intercepts, use `function_plots` to plot ONLY the original function.\n"
-    "4. The `steps` array must contain a maximum of 3 steps.\n"
-    "5. Each string in the `steps` array must be a maximum of 85 characters long.\n"
-    "6. Each string in the `steps` array must be a complete math expression and MUST NOT be wrapped in '$' or '$$'.\n"
-    "7. The title can contain inline '$...$' math, but the steps cannot."
+    "4. For geometric problems (area, perimeter, angles, shapes), use `geometric_shapes` to render relevant shapes like squares, circles, triangles, rectangles, etc. Position them appropriately and label them clearly.\n"
+    "5. The `steps` array must contain a maximum of 3 steps.\n"
+    "6. Each string in the `steps` array must be a maximum of 85 characters long.\n"
+    "7. Each string in the `steps` array must be a complete math expression and MUST NOT be wrapped in '$' or '$$'.\n"
+    "8. The title can contain inline '$...$' math, but the steps cannot."
 )
 
 # --- 5) Few-shot examples (No changes needed, they perfectly demonstrate when to plot) ---
@@ -125,6 +162,33 @@ FEW_SHOT = [
                 ],
                 "x_min": 0,
                 "x_max": 5
+            })
+        }],
+    },
+    {
+        "role": "user",
+        "parts": [{"text": "Find the area of a square with side length 4"}],
+    },
+    {
+        "role": "model",
+        "parts": [{
+            "text": json.dumps({
+                "title": r"Area of a Square",
+                "steps": [
+                    r"A = s^2",
+                    r"A = 4^2 = 16",
+                    r"A = 16 \text{ square units}"
+                ],
+                "geometric_shapes": [
+                    {
+                        "shape_type": "square",
+                        "label": "Square (s=4)",
+                        "position": [0, 0],
+                        "size": 2.0,
+                        "color": "BLUE",
+                        "fill_opacity": 0.3
+                    }
+                ]
             })
         }],
     },
