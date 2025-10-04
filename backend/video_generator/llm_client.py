@@ -160,7 +160,6 @@ def ask_llm(question: str) -> str:
     Uses the modern Tool Calling API for reliable, structured output.
     Will retry once with a repair message if the first output isn't valid.
     """
-    # Your debug feature is a nice touch for development.
     if question.strip() == "-debug previous":
         debug_path = "./build/lesson.json"
         try:
