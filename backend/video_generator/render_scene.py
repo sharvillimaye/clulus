@@ -1,8 +1,10 @@
 # render_scene.py
 import json, os
+import re
+import numpy as np
+import sympy as sp
 from manim import *
 from lesson_schema import Lesson
-import re, numpy as np, sympy as sp
 from sympy.parsing.sympy_parser import (
     parse_expr,
     standard_transformations,
@@ -85,6 +87,74 @@ def to_sympy_expr(s: str) -> sp.Expr:
         evaluate=True,
     )
     return expr
+
+def create_geometric_shape(shape_data):
+    """Create a Manim geometric shape from shape data."""
+    shape_type = shape_data.shape_type
+    position = shape_data.position
+    size = shape_data.size or 1.0  # Default size if None
+    
+    # Scale down the size to fit better on screen (Manim screen is roughly 14x8 units)
+    scale_factor = 0.4  # Make shapes much smaller
+    size = size * scale_factor
+    
+    # Handle color mapping
+    color_map = {
+        "BLUE": BLUE, "RED": RED, "GREEN": GREEN, "YELLOW": YELLOW,
+        "ORANGE": ORANGE, "PURPLE": PURPLE, "PINK": PINK, "GRAY": GRAY,
+        "WHITE": WHITE, "BLACK": BLACK
+    }
+    color = color_map.get(shape_data.color, BLUE)
+    
+    fill_opacity = shape_data.fill_opacity or 0.3
+    stroke_width = shape_data.stroke_width or 2.0
+    
+    # Convert position to Manim coordinates (scale down positions too)
+    x, y = position[0] * 0.3, position[1] * 0.3  # Scale down positions more
+    
+    if shape_type == "square":
+        shape = Square(side_length=size, color=color, fill_opacity=fill_opacity, stroke_width=stroke_width)
+    elif shape_type == "circle":
+        shape = Circle(radius=size, color=color, fill_opacity=fill_opacity, stroke_width=stroke_width)
+    elif shape_type == "triangle":
+        # Create equilateral triangle
+        vertices = [
+            [x, y + size * 0.577],  # top vertex
+            [x - size * 0.5, y - size * 0.289],  # bottom left
+            [x + size * 0.5, y - size * 0.289]   # bottom right
+        ]
+        shape = Polygon(*[np.array(v) for v in vertices], color=color, fill_opacity=fill_opacity, stroke_width=stroke_width)
+    elif shape_type == "rectangle":
+        width = (shape_data.width or size) * scale_factor
+        height = (shape_data.height or size) * scale_factor
+        shape = Rectangle(width=width, height=height, color=color, fill_opacity=fill_opacity, stroke_width=stroke_width)
+    elif shape_type == "polygon":
+        if shape_data.vertices:
+            # Scale down custom vertices
+            vertices = [np.array([v[0] * 0.3, v[1] * 0.3, 0]) for v in shape_data.vertices]
+            shape = Polygon(*vertices, color=color, fill_opacity=fill_opacity, stroke_width=stroke_width)
+        else:
+            # Default to hexagon if no vertices provided
+            angles = np.linspace(0, 2*np.pi, 6, endpoint=False)
+            vertices = [[x + size * np.cos(a), y + size * np.sin(a)] for a in angles]
+            shape = Polygon(*[np.array(v) for v in vertices], color=color, fill_opacity=fill_opacity, stroke_width=stroke_width)
+    elif shape_type == "line":
+        # Create a horizontal line
+        start = np.array([x - size/2, y, 0])
+        end = np.array([x + size/2, y, 0])
+        shape = Line(start, end, color=color, stroke_width=stroke_width)
+    elif shape_type == "arrow":
+        # Create a horizontal arrow
+        start = np.array([x - size/2, y, 0])
+        end = np.array([x + size/2, y, 0])
+        shape = Arrow(start, end, color=color, stroke_width=stroke_width)
+    else:
+        # Default to circle for unknown shapes
+        shape = Circle(radius=size, color=color, fill_opacity=fill_opacity, stroke_width=stroke_width)
+    
+    # Position the shape
+    shape.move_to(np.array([x, y, 0]))
+    return shape
 
 class LessonScene(Scene):
     def construct(self):
@@ -181,7 +251,7 @@ class LessonScene(Scene):
                     y_range=[ymin, ymax, y_step],
                     x_length=8, y_length=4.5, tips=False,
                     axis_config={"include_numbers": True, "font_size": 24},
-                ).to_edge(DOWN).shift(DOWN * 0.2)
+                ).center()
 
                 self.play(Create(axes), run_time=0.8)
 
@@ -207,12 +277,62 @@ class LessonScene(Scene):
                     self.wait(0.2)
 
                 # Arrange labels nicely
-                labels_group.arrange(RIGHT, buff=0.4).next_to(axes, UP, buff=0.2)
+                labels_group.arrange(RIGHT, buff=0.4).next_to(axes, UP, buff=0.3)
                 self.play(labels_group.animate)
                 self.wait(0.5)
 
             except Exception as e:
                 err = Text(f"Parse/plot error: {e}", font_size=24, color=RED).to_edge(DOWN).shift(UP * 0.5)
+                self.play(FadeIn(err))
+                self.wait(0.5)
+
+        # Optional geometric shapes
+        if lesson.geometric_shapes:
+            try:
+                shapes_group = VGroup()
+                labels_group = VGroup()
+                
+                for shape_data in lesson.geometric_shapes:
+                    # Create the geometric shape
+                    shape = create_geometric_shape(shape_data)
+                    shapes_group.add(shape)
+                    
+                    # Create label for the shape
+                    label = MathTex(shape_data.label, font_size=24, color=shape.color)
+                    # Position label near the shape
+                    label.next_to(shape, UP, buff=0.2)
+                    labels_group.add(label)
+                
+                # Animate shapes appearing one by one
+                for i, (shape, label) in enumerate(zip(shapes_group, labels_group)):
+                    self.play(Create(shape), Write(label), run_time=0.8)
+                    self.wait(0.2)
+                
+                # Arrange all shapes nicely if there are multiple
+                if len(shapes_group) > 1:
+                    # Scale down the arrangement to fit better
+                    shapes_group.arrange(RIGHT, buff=0.4)
+                    labels_group.arrange(RIGHT, buff=0.4)
+                    # Center the group and scale it down if needed
+                    shapes_group.center()
+                    labels_group.next_to(shapes_group, UP, buff=0.15)
+                    
+                    # Scale down if the group is too wide (more aggressive scaling)
+                    if shapes_group.width > 6:
+                        scale_factor = 6 / shapes_group.width
+                        shapes_group.scale(scale_factor)
+                        labels_group.scale(scale_factor)
+                        labels_group.next_to(shapes_group, UP, buff=0.15)
+                    
+                    self.play(
+                        shapes_group.animate,
+                        labels_group.animate
+                    )
+                
+                self.wait(1.0)
+                
+            except Exception as e:
+                err = Text(f"Geometric shape error: {e}", font_size=24, color=RED).to_edge(DOWN).shift(UP * 0.5)
                 self.play(FadeIn(err))
                 self.wait(0.5)
 
