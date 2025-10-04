@@ -137,6 +137,37 @@ export default function MathQuestion() {
     generateNewProblem();
   }, []);
 
+  // Console log HTML content when component mounts or updates
+  useEffect(() => {
+    // Log the innerHTML of the math question component (without class names)
+    setTimeout(() => {
+      const mathComponent = document.querySelector("[data-math-component]");
+      if (mathComponent) {
+        // Create a clone to avoid modifying the original DOM
+        const clone = mathComponent.cloneNode(true) as HTMLElement;
+
+        // Remove all class attributes
+        const removeClasses = (element: HTMLElement) => {
+          element.removeAttribute("class");
+          Array.from(element.children).forEach((child) => {
+            if (child instanceof HTMLElement) {
+              removeClasses(child);
+            }
+          });
+        };
+
+        removeClasses(clone);
+        console.log(clone.innerHTML);
+
+        // Also log the original with classes for comparison
+        //console.log("Math Question Component innerHTML (with classes):");
+        //console.log(mathComponent.innerHTML);
+      } else {
+        console.log("Math Question Component not found in DOM");
+      }
+    }, 100); // Small delay to ensure DOM is updated
+  }, [currentProblem]);
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "easy":
@@ -151,7 +182,7 @@ export default function MathQuestion() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto" data-math-component>
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">

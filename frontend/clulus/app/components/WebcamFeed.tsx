@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useWebcam } from "../hooks/useWebcam";
-import ConfusionModal from "./ConfusionModal";
+import HintSlideIn from "./HintSlideIn";
 
 export default function WebcamFeed() {
   const {
@@ -18,8 +18,8 @@ export default function WebcamFeed() {
     dismissConfusionModal,
   } = useWebcam();
 
-  // Test state for modal - remove in production
-  const [testModalOpen, setTestModalOpen] = React.useState(false);
+  // Test state for hint slide-in
+  const [showHintSlideIn, setShowHintSlideIn] = React.useState(false);
 
   const handleStartWebcam = () => {
     console.log("Start webcam button clicked");
@@ -101,15 +101,15 @@ export default function WebcamFeed() {
             )}
           </div>
 
-          {/* Test button for modal */}
+          {/* Test button for hint slide-in */}
           <button
             onClick={() => {
-              console.log("Test confusion modal triggered");
-              setTestModalOpen(true);
+              console.log("Test hint slide-in triggered");
+              setShowHintSlideIn(true);
             }}
             className="w-full px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg transition-colors duration-200 text-sm"
           >
-            Test Modal
+            Test Hint
           </button>
         </div>
 
@@ -166,12 +166,16 @@ export default function WebcamFeed() {
         )}
       </div>
 
-      {/* Confusion Modal */}
-      <ConfusionModal
-        isOpen={showConfusionModal || testModalOpen}
+      {/* Hint Slide-In */}
+      <HintSlideIn
+        isVisible={showConfusionModal || showHintSlideIn}
         onClose={() => {
           dismissConfusionModal();
-          setTestModalOpen(false);
+          setShowHintSlideIn(false);
+        }}
+        onAcceptHint={() => {
+          console.log("Hint accepted! This would trigger hint functionality.");
+          // Here you could add logic to show a hint for the current math problem
         }}
       />
     </div>
