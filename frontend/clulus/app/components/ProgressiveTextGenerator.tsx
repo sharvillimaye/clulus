@@ -342,38 +342,41 @@ RESPONSE:`;
       )}
 
       {/* Video Ready Status - Show when video is generated but not displayed */}
-      {extractedQuestion && videoGenerated && !showVideo && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-4">
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-green-800 dark:text-green-200">
-              Math animation ready! Hover the button again for 3 seconds to
-              view.
-            </div>
-            <button
-              onMouseEnter={handleVideoMouseEnter}
-              onMouseLeave={handleVideoMouseLeave}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium relative group"
-            >
-              🎬 View Animation
-              {isVideoHovering && (
-                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                  {Math.round(videoHoverTimer / 100) / 10}s / 3.0s
-                </div>
-              )}
-            </button>
-          </div>
-          {isVideoHovering && (
-            <div className="mt-3">
-              <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
-                <div
-                  className="bg-green-600 dark:bg-green-400 h-2 rounded-full transition-all duration-100 ease-out"
-                  style={{ width: `${(videoHoverTimer / 3000) * 100}%` }}
-                ></div>
+      {extractedQuestion &&
+        videoGenerated &&
+        !showVideo &&
+        hasHoveredForVideo && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-4">
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-green-800 dark:text-green-200">
+                Math animation ready! Hover the button again for 3 seconds to
+                view.
               </div>
+              <button
+                onMouseEnter={handleVideoMouseEnter}
+                onMouseLeave={handleVideoMouseLeave}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium relative group"
+              >
+                🎬 View Animation
+                {isVideoHovering && (
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                    {Math.round(videoHoverTimer / 100) / 10}s / 3.0s
+                  </div>
+                )}
+              </button>
             </div>
-          )}
-        </div>
-      )}
+            {isVideoHovering && (
+              <div className="mt-3">
+                <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
+                  <div
+                    className="bg-green-600 dark:bg-green-400 h-2 rounded-full transition-all duration-100 ease-out"
+                    style={{ width: `${(videoHoverTimer / 3000) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
     </div>
   );
 }
