@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { GoogleGenAI } from "@google/genai";
-import 'dotenv/config';
+import MathVideoPlayer from "./MathVideoPlayer";
 
 // const elevenlabs = new ElevenLabsClient();
 // const audio = await elevenlabs.textToSpeech.convert('JBFqnCBsd6RMkjVDRZzb', {
@@ -31,6 +31,7 @@ export default function ProgressiveTextGenerator({
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [fullText, setFullText] = useState("");
+  const [extractedQuestion, setExtractedQuestion] = useState<string>("");
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Function to generate hint using Google Gemini AI
@@ -119,13 +120,21 @@ RESPONSE:`;
       const questionMatch = fullResponse.match(
         /<question>([\s\S]*?)<\/question>/
       );
-      console.log("💬💬💬", audioMatch?.[0]);
-      console.log("🤔🤔🤔", questionMatch?.[0]);
+
       if (hintMatch) {
         const hintContent = hintMatch[1].trim();
         setDisplayedText(hintContent);
         onTextUpdate(hintContent);
       }
+
+      // Extract and store the question for video generation
+      if (questionMatch) {
+        const questionContent = questionMatch[1].trim();
+        setExtractedQuestion(questionContent);
+        console.log("📝 Extracted question:", questionContent);
+      }
+
+      console.log("💬💬💬", audioMatch?.[0]);
       onComplete();
     } catch (error: any) {
       console.error("Error generating hint:", error);
@@ -144,7 +153,8 @@ RESPONSE:`;
   }, [isGenerating]);
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-4">
+      {/* AI Generated Hint */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
         <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 text-sm">
           💡 AI Generated Hint:
@@ -169,6 +179,11 @@ RESPONSE:`;
           )}
         </div>
       </div>
+
+      {/* Math Video Player */}
+      {extractedQuestion && (
+        <MathVideoPlayer question={extractedQuestion} className="mt-4" />
+      )}
     </div>
   );
 }

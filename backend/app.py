@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request, send_from_directory, send_file
+from flask_cors import CORS
 import base64
 import io
 import json
@@ -25,6 +26,9 @@ except Exception as e:
     Lesson = None
 
 app = Flask(__name__)
+
+# Enable CORS for all routes
+CORS(app, origins=['http://localhost:3000'])
 
 VIDEO_DIR = './video_generator/media/videos/render_scene/1080p60'
 BUILD_DIR = './video_generator/build'
