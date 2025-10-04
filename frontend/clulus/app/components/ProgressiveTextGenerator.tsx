@@ -12,6 +12,7 @@ interface ProgressiveTextGeneratorProps {
   isGenerating: boolean;
   onError: (error: string) => void;
   screenshot?: string; // Base64 encoded screenshot
+  customQuestion?: string; // Custom question text for text-based analysis
 }
 
 export default function ProgressiveTextGenerator({
@@ -20,6 +21,7 @@ export default function ProgressiveTextGenerator({
   isGenerating,
   onError,
   screenshot,
+  customQuestion,
 }: ProgressiveTextGeneratorProps) {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -160,7 +162,25 @@ export default function ProgressiveTextGenerator({
         );
       }
 
-      const prompt = `You are an expert math tutor. Analyze the attached screenshot of a math problem and generate exactly THREE tags in this specific format.
+      const prompt = customQuestion
+        ? `You are an expert math tutor. Analyze the following math question and generate exactly THREE tags in this specific format.
+
+INSTRUCTIONS:
+- Read the math question carefully to understand what the student is asking
+- Identify the mathematical concepts and difficulty level
+- Generate exactly 3 tags: <hint>, <audio_script>, and <question>
+- Don't repeat tags or create multiple instances
+- Keep responses concise and helpful
+- Use LaTeX notation for mathematical expressions (e.g., $x^2$, $\\frac{a}{b}$, $\\int_0^1 f(x) dx$)
+
+MATH QUESTION: "${customQuestion}"
+
+FORMAT (copy exactly):
+<hint>Write a helpful 2 sentence hint that guides the student WITHOUT giving away the answer, focus on helping develop intuition and problem-solving skills. Use LaTeX for math expressions.</hint>
+<audio_script>Write a detailed 3-4 sentence audio explanation that auditory learners can listen to. This should be more comprehensive than the hint and explain the problem step-by-step in a conversational tone. Use natural language, avoid LaTeX, and make it sound like a friendly tutor speaking directly to the student.</audio_script>
+<question>Write the exact mathematical question, keeping all essential information to solve the problem, keep it as concise as possible. Use LaTeX notation for mathematical expressions.</question>
+RESPONSE:`
+        : `You are an expert math tutor. Analyze the attached screenshot of a math problem and generate exactly THREE tags in this specific format.
 
 INSTRUCTIONS:
 - Look at the screenshot carefully to understand the math problem
@@ -184,13 +204,18 @@ RESPONSE:`;
       const models = await genAI.models.list();
       console.log("Available models:", models);
 
-      // Prepare content with image only
+      // Prepare content with image or text
       const contentParts = [];
 
       console.log("Screenshot provided:", !!screenshot);
+      console.log("Custom question provided:", !!customQuestion);
       console.log("Screenshot length:", screenshot?.length || 0);
 
-      if (screenshot) {
+      if (customQuestion) {
+        // Text-based analysis
+        contentParts.push({ text: prompt });
+      } else if (screenshot) {
+        // Image-based analysis
         const base64Data = screenshot.replace(
           /^data:image\/[a-z]+;base64,/,
           ""
@@ -205,7 +230,9 @@ RESPONSE:`;
         });
         contentParts.push({ text: prompt });
       } else {
-        throw new Error("No screenshot provided for analysis");
+        throw new Error(
+          "No screenshot or custom question provided for analysis"
+        );
       }
 
       const result = await genAI.models.generateContentStream({
