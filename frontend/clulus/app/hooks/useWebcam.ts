@@ -17,6 +17,8 @@ interface UseWebcamReturn {
   hasWebcam: boolean;
   sentimentResults: SentimentResult[];
   isAnalyzing: boolean;
+  showConfusionModal: boolean;
+  dismissConfusionModal: () => void;
 }
 
 export const useWebcam = (): UseWebcamReturn => {
@@ -26,9 +28,50 @@ export const useWebcam = (): UseWebcamReturn => {
   const [hasWebcam, setHasWebcam] = useState(false);
   const [sentimentResults, setSentimentResults] = useState<SentimentResult[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showConfusionModal, setShowConfusionModal] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
   const frameIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const confusionStartTimeRef = useRef<number | null>(null);
+
+  // Function to check for confusion and trigger modal
+  const checkForConfusion = useCallback((result: SentimentResult) => {
+    const CONFUSION_THRESHOLD = 0.3; // Confidence threshold for confusion detection
+    const CONFUSION_DURATION = 5000; // 5 seconds of confusion before showing modal
+    
+    // Check if sentiment indicates confusion (low confidence or negative sentiment)
+    const isConfused = result.confidence < CONFUSION_THRESHOLD || 
+                      result.sentiment === 'negative' || 
+                      result.sentiment === 'confused';
+    
+    if (isConfused) {
+      // Start tracking confusion time
+      if (confusionStartTimeRef.current === null) {
+        confusionStartTimeRef.current = Date.now();
+        console.log('Confusion detected, starting timer...');
+      } else {
+        // Check if confusion has lasted long enough
+        const confusionDuration = Date.now() - confusionStartTimeRef.current;
+        if (confusionDuration >= CONFUSION_DURATION && !showConfusionModal) {
+          console.log('Confusion threshold reached, showing modal');
+          setShowConfusionModal(true);
+        }
+      }
+    } else {
+      // Reset confusion timer if sentiment improves
+      if (confusionStartTimeRef.current !== null) {
+        console.log('Confusion cleared, resetting timer');
+        confusionStartTimeRef.current = null;
+      }
+    }
+  }, [showConfusionModal]);
+
+  // Function to dismiss confusion modal
+  const dismissConfusionModal = useCallback(() => {
+    setShowConfusionModal(false);
+    confusionStartTimeRef.current = null;
+    console.log('Confusion modal dismissed');
+  }, []);
 
   // Function to capture frame and send to backend
   const captureAndAnalyzeFrame = useCallback(async () => {
@@ -76,6 +119,9 @@ export const useWebcam = (): UseWebcamReturn => {
         const newResults = [...prev, result];
         return newResults.slice(-10);
       });
+
+      // Check for confusion
+      checkForConfusion(result);
 
       console.log('Sentiment analysis result:', result);
     } catch (err) {
@@ -184,6 +230,8 @@ export const useWebcam = (): UseWebcamReturn => {
     stopWebcam,
     hasWebcam,
     sentimentResults,
-    isAnalyzing
+    isAnalyzing,
+    showConfusionModal,
+    dismissConfusionModal
   };
 };

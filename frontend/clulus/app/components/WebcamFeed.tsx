@@ -1,6 +1,8 @@
 "use client";
 
+import React from "react";
 import { useWebcam } from "../hooks/useWebcam";
+import ConfusionModal from "./ConfusionModal";
 
 export default function WebcamFeed() {
   const {
@@ -12,7 +14,12 @@ export default function WebcamFeed() {
     hasWebcam,
     sentimentResults,
     isAnalyzing,
+    showConfusionModal,
+    dismissConfusionModal,
   } = useWebcam();
+
+  // Test state for modal - remove in production
+  const [testModalOpen, setTestModalOpen] = React.useState(false);
 
   const handleStartWebcam = () => {
     console.log("Start webcam button clicked");
@@ -89,6 +96,17 @@ export default function WebcamFeed() {
                 <span className="font-medium">Analyzing...</span>
               </div>
             )}
+
+            {/* Test button for modal - remove in production */}
+            <button
+              onClick={() => {
+                console.log("Test confusion modal triggered");
+                setTestModalOpen(true);
+              }}
+              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg transition-colors duration-200 text-sm"
+            >
+              Test Confusion Modal
+            </button>
           </div>
 
           {/* Status Info */}
@@ -147,6 +165,15 @@ export default function WebcamFeed() {
           </div>
         )}
       </div>
+
+      {/* Confusion Modal */}
+      <ConfusionModal
+        isOpen={showConfusionModal || testModalOpen}
+        onClose={() => {
+          dismissConfusionModal();
+          setTestModalOpen(false);
+        }}
+      />
     </div>
   );
 }
