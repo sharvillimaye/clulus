@@ -1,19 +1,29 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import ProgressiveTextGenerator from "./ProgressiveTextGenerator";
 
 interface HintSlideInProps {
   isVisible: boolean;
   onClose: () => void;
   onAcceptHint: () => void;
+  question?: string;
+  difficulty?: "easy" | "medium" | "hard";
+  screenshot?: string;
 }
 
 export default function HintSlideIn({
   isVisible,
   onClose,
   onAcceptHint,
+  question = "What is 15 × 7?",
+  difficulty = "medium",
+  screenshot,
 }: HintSlideInProps) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedText, setGeneratedText] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isVisible) {
@@ -21,19 +31,35 @@ export default function HintSlideIn({
     }
   }, [isVisible]);
 
+  const handleAcceptHint = () => {
+    if (!isGenerating) {
+      setIsGenerating(true);
+      setError("");
+      setGeneratedText("");
+    }
+  };
+
+  const handleTextUpdate = (text: string) => {
+    setGeneratedText(text);
+  };
+
+  const handleGenerationComplete = () => {
+    setIsGenerating(false);
+  };
+
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+    setIsGenerating(false);
+  };
+
   const handleClose = () => {
     setIsAnimating(false);
+    setIsGenerating(false);
+    setGeneratedText("");
+    setError("");
     setTimeout(() => {
       onClose();
     }, 300); // Match animation duration
-  };
-
-  const handleAcceptHint = () => {
-    setIsAnimating(false);
-    setTimeout(() => {
-      onAcceptHint();
-      onClose();
-    }, 300);
   };
 
   if (!isVisible && !isAnimating) return null;
@@ -67,15 +93,24 @@ export default function HintSlideIn({
             for this math problem?
           </p>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 text-sm">
-              💡 Hint Preview:
-            </h4>
-            <p className="text-xs text-blue-800 dark:text-blue-200">
-              Try breaking down the problem into smaller steps. Look for
-              patterns or formulas you've learned before.
-            </p>
-          </div>
+          {error ? (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2 text-sm">
+                ⚠️ Error:
+              </h4>
+              <p className="text-xs text-red-800 dark:text-red-200">{error}</p>
+            </div>
+          ) : (
+            <ProgressiveTextGenerator
+              question={question}
+              difficulty={difficulty}
+              onTextUpdate={handleTextUpdate}
+              onComplete={handleGenerationComplete}
+              isGenerating={isGenerating}
+              onError={handleError}
+              screenshot={screenshot}
+            />
+          )}
         </div>
 
         {/* Actions */}
@@ -88,9 +123,10 @@ export default function HintSlideIn({
           </button>
           <button
             onClick={handleAcceptHint}
-            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+            disabled={isGenerating}
+            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
           >
-            Get Hint
+            {isGenerating ? "Generating..." : "Get Hint"}
           </button>
         </div>
 
