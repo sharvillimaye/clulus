@@ -10,7 +10,11 @@ interface MathProblem {
   difficulty: "easy" | "medium" | "hard";
 }
 
-export default function MathQuestion() {
+export default function MathQuestion({
+  setQContent,
+}: {
+  setQContent: (content: MathProblem) => void;
+}) {
   const [currentProblem, setCurrentProblem] = useState<MathProblem | null>(
     null
   );
@@ -87,6 +91,7 @@ export default function MathQuestion() {
   const generateNewProblem = () => {
     const randomIndex = Math.floor(Math.random() * mathProblems.length);
     const problem = mathProblems[randomIndex];
+    setQContent(problem);
     setCurrentProblem(problem);
     setSelectedAnswer(null);
     setShowResult(false);
