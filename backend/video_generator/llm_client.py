@@ -26,12 +26,12 @@ JSON_SCHEMA: Dict[str, Any] = {
     "properties": {
         "title": {
             "type": "string",
-            "description": "A short LaTeX-friendly title for the lesson..."
+            "description": "A short LaTeX-friendly title for the lesson. May contain inline math like $e^x$."
         },
         "steps": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "An ordered list of strings... max 3 steps... max 85 chars..."
+            "description": "An ordered list of strings. Each string is a self-contained LaTeX math expression WITHOUT surrounding '$' or '$$' delimiters. For example, a valid step is 'f(x)=x^2+1', not '$f(x)=x^2+1$'. Maximum of 85 characters. Maximum of 3 steps."
         },
         "function_plots": {
             "type": "array",
@@ -60,14 +60,15 @@ JSON_SCHEMA: Dict[str, Any] = {
 # --- 4) System/style prompt ---
 SYSTEM_INSTRUCTION = (
     "You are a helpful and concise math explainer.\n"
-    "Given a user's math question, you MUST call the `submit_lesson` function...\n"
+    "Given a user's math question, you MUST call the `submit_lesson` function\n"
     "to provide a structured response with a title and step-by-step solution.\n"
     "CRITICAL RULES:\n"
-    "1. For questions involving functions (like derivatives), use `function_plots` to plot BOTH the original function and the final result (max 2 plots). Label them appropriately (e.g., 'f(x)' and 'f\\'(x)').\n"
-    "2. The `steps` array must contain a maximum of 3 steps.\n"
-    "3. Each string in the `steps` array must be a maximum of 85 characters long.\n"
-    "4. Each string in the `steps` array must be a complete math expression and MUST NOT be wrapped in '$' or '$$'.\n"
-    "5. The title can contain inline '$...$' math, but the steps cannot."
+    "1. Use simple LaTeX and keep each step concise and purely mathematical.\n"
+    "2. For questions involving functions (like derivatives), use `function_plots` to plot BOTH the original function and the final result (max 2 plots). Label them appropriately (e.g., 'f(x)' and 'f\\'(x)').\n"
+    "3. The `steps` array must contain a maximum of 3 steps.\n"
+    "4. Each string in the `steps` array must be a maximum of 85 characters long.\n"
+    "5. Each string in the `steps` array must be a complete math expression and MUST NOT be wrapped in '$' or '$$'.\n"
+    "6. The title can contain inline '$...$' math, but the steps cannot."
 )
 
 # --- 5) Few-shot examples (No changes needed, they perfectly demonstrate when to plot) ---
@@ -181,8 +182,16 @@ def ask_llm(question: str) -> str:
     Will retry once with a repair message if the first output isn't valid.
     """
     if question.strip() == "-debug previous":
-        # ... (your debug logic is fine)
-        pass
+        debug_path = "./build/lesson.json"
+        try:
+            with open(debug_path, "r") as f:
+                data = json.load(f)
+            validated_data = _validate_or_raise(data)
+            return json.dumps(validated_data)
+        except FileNotFoundError:
+            return json.dumps({"title": "Error", "steps": [f"Debug file not found: {debug_path}"]})
+        except Exception as e:
+            return json.dumps({"title": "Error", "steps": [f"Failed to load or validate debug file: {e}"]})
 
     convo = FEW_SHOT + [{"role": "user", "parts": [{"text": question}]}]
     tool_config = {"function_calling_config": "any"}

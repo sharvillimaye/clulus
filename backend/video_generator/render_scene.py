@@ -125,7 +125,7 @@ class LessonScene(Scene):
                 span = float(abs(span))
                 if span == 0 or not np.isfinite(span): return 1.0
                 raw = span / max(target_ticks, 1)
-                exp = np.floor(np.log10(raw));
+                exp = np.floor(np.log10(raw))
                 base = raw / (10 ** exp)
                 if base < 1.5:
                     nice = 1.0
