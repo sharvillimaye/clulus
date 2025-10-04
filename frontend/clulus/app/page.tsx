@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import html2canvas from "html2canvas";
 import MathQuestion from "./components/MathQuestion";
 import HintSlideIn from "./components/HintSlideIn";
@@ -17,6 +17,8 @@ export default function Home() {
   const [showHint, setShowHint] = useState(false);
   const [qContent, setQContent] = useState<MathProblem | null>(null);
   const [screenshot, setScreenshot] = useState<string>("");
+  const [hoverProgress, setHoverProgress] = useState(0);
+  const [isHovering, setIsHovering] = useState(false);
 
   const handleShowHint = async () => {
     // Capture screenshot of the math question area
@@ -77,9 +79,58 @@ export default function Home() {
 
   const handleCloseHint = () => {
     setShowHint(false);
+    // Reset hover state when hint is closed
+    setIsHovering(false);
+    setHoverProgress(0);
   };
 
   const handleAcceptHint = () => {};
+
+  // Add keyboard shortcut to trigger hints (Ctrl+H or Cmd+H)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "h" && !showHint) {
+        event.preventDefault();
+        handleShowHint();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showHint]);
+
+  // Hover animation logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (isHovering) {
+      interval = setInterval(() => {
+        setHoverProgress((prev) => {
+          const newProgress = prev + 100 / 20; // 3 seconds = 30 * 100ms intervals
+          if (newProgress >= 100) {
+            handleShowHint();
+            setIsHovering(false);
+            return 0;
+          }
+          return newProgress;
+        });
+      }, 50);
+    } else {
+      setHoverProgress(0);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isHovering]);
+
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -89,15 +140,90 @@ export default function Home() {
           <MathQuestion setQContent={setQContent} />
         </div>
 
-        {/* Hint Button */}
-        <div className="fixed bottom-4 right-4">
-          <button
-            onClick={handleShowHint}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg transition-colors duration-200 flex items-center gap-2"
+        {/* Animated Hint Trigger - Top Right Corner */}
+        <div className="fixed top-4 right-4 z-40">
+          <div
+            className={`relative w-16 h-16 group ${
+              showHint ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            }`}
+            onMouseEnter={showHint ? undefined : handleMouseEnter}
+            onMouseLeave={showHint ? undefined : handleMouseLeave}
           >
-            <span>💡</span>
-            Get Hint
-          </button>
+            {/* Background Circle */}
+            <div
+              className={`absolute inset-0 bg-blue-500/20 rounded-full transition-all duration-300 ${
+                showHint
+                  ? ""
+                  : "group-hover:bg-blue-500/30 group-hover:scale-110"
+              }`}
+            ></div>
+
+            {/* Progress Ring */}
+            <div className="absolute inset-0 rounded-full">
+              <svg
+                className="w-full h-full transform -rotate-90"
+                viewBox="0 0 64 64"
+              >
+                {/* Background circle */}
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                  className="text-blue-500/30"
+                />
+                {/* Progress circle */}
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                  strokeDasharray={`${2 * Math.PI * 28}`}
+                  strokeDashoffset={`${
+                    2 * Math.PI * 28 * (1 - hoverProgress / 100)
+                  }`}
+                  className="text-blue-500 transition-all duration-100 ease-out"
+                  style={{
+                    strokeLinecap: "round",
+                    opacity: isHovering ? 1 : 0,
+                  }}
+                />
+              </svg>
+            </div>
+
+            {/* Icon */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div
+                className={`transition-all duration-300 ${
+                  showHint
+                    ? "scale-100"
+                    : isHovering
+                    ? "scale-110"
+                    : "scale-100"
+                }`}
+              >
+                  <div className="text-blue-600 dark:text-blue-400 text-xl group-hover:text-blue-700 dark:group-hover:text-blue-300">
+                    💡
+                  </div>
+              </div>
+            </div>
+
+            {/* Tooltip */}
+            <div
+              className={`absolute right-full mr-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 transition-opacity duration-300 whitespace-nowrap ${
+                showHint || hoverProgress > 0
+                  ? "hidden"
+                  : "group-hover:opacity-100"
+              }`}
+            >
+              Hover for 3s to get hint
+              <div className="absolute left-full top-1/2 transform -translate-y-1/2 border-4 border-transparent border-l-gray-900"></div>
+            </div>
+          </div>
         </div>
       </div>
 

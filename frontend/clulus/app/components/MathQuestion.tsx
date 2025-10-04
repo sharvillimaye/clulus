@@ -27,64 +27,26 @@ export default function MathQuestion({
 
   // Sample math problems
   const mathProblems: MathProblem[] = [
+    // plot problem
+    // graph problem
+    //
     {
-      question: "What is 15 × 7?",
-      answer: 105,
-      options: [95, 105, 115, 125],
+      question:
+        "What is the value of the definite integral $$\\int_{1}^{2} (3x^2 + 2x + 1) dx$$?",
+      answer: 11,
+      options: [9, 10, 11, 12],
       explanation:
-        "15 × 7 = 105. You can calculate this by multiplying 15 by 7.",
-      difficulty: "easy",
-    },
-    {
-      question: "Solve for x: 2x + 8 = 20",
-      answer: 6,
-      options: [4, 6, 8, 10],
-      explanation: "2x + 8 = 20 → 2x = 20 - 8 → 2x = 12 → x = 6",
-      difficulty: "medium",
-    },
-    {
-      question: "What is the area of a circle with radius 5? (Use π ≈ 3.14)",
-      answer: 78.5,
-      options: [25, 31.4, 78.5, 157],
-      explanation: "Area = π × r² = 3.14 × 5² = 3.14 × 25 = 78.5",
-      difficulty: "medium",
-    },
-    {
-      question: "What is 3/4 + 1/2?",
-      answer: 1.25,
-      options: [1, 1.25, 1.5, 2],
-      explanation: "3/4 + 1/2 = 3/4 + 2/4 = 5/4 = 1.25",
-      difficulty: "easy",
-    },
-    {
-      question: "Find the derivative of x³ + 2x² - 5x + 1",
-      answer: 3,
-      options: [3, 6, 9, 12],
-      explanation:
-        "d/dx(x³ + 2x² - 5x + 1) = 3x² + 4x - 5. At x = 1: 3(1)² + 4(1) - 5 = 3 + 4 - 5 = 2",
-      difficulty: "hard",
-    },
-    {
-      question: "What is log₂(8)?",
-      answer: 3,
-      options: [2, 3, 4, 8],
-      explanation: "log₂(8) = 3 because 2³ = 8",
-      difficulty: "medium",
-    },
-    {
-      question: "Solve: √(16 + 9)",
-      answer: 5,
-      options: [5, 7, 25, 49],
-      explanation: "√(16 + 9) = √25 = 5",
+        "To solve this problem, we first find the antiderivative of the function $f(x) = 3x^2 + 2x + 1$. We use the power rule for integration, which states that $\\int x^n dx = \\frac{x^{n+1}}{n+1} + C$.\n\nThe antiderivative of $3x^2$ is $\\frac{3x^{2+1}}{2+1} = \\frac{3x^3}{3} = x^3$.\n\nThe antiderivative of $2x$ is $\\frac{2x^{1+1}}{1+1} = \\frac{2x^2}{2} = x^2$.\n\nThe antiderivative of the constant $1$ is $x$.\n\nSo, the antiderivative of the entire function is $F(x) = x^3 + x^2 + x$. We can ignore the constant of integration, C, because it will cancel out during the evaluation of the definite integral.\n\nNext, we use the Fundamental Theorem of Calculus, which states that $\\int_{a}^{b} f(x) dx = F(b) - F(a)$.\n\nWe evaluate the antiderivative at the upper limit (2) and the lower limit (1):\n\nEvaluation at $x=2$: $F(2) = (2)^3 + (2)^2 + 2 = 8 + 4 + 2 = 14$.\n\nEvaluation at $x=1$: $F(1) = (1)^3 + (1)^2 + 1 = 1 + 1 + 1 = 3$.\n\nFinally, we subtract the lower limit value from the upper limit value:\n\n$F(2) - F(1) = 14 - 3 = 11$.\n\nTherefore, the value of the definite integral is 11.",
       difficulty: "easy",
     },
     {
       question:
-        "What is the slope of the line passing through (2, 3) and (4, 7)?",
-      answer: 2,
-      options: [1, 2, 3, 4],
-      explanation: "Slope = (7-3)/(4-2) = 4/2 = 2",
-      difficulty: "medium",
+        "A circle with center (3, 4) and a radius of 5 units is inscribed in a square. What is the area of the square?",
+      answer: 100,
+      options: [25, 50, 75, 100],
+      explanation:
+        "When a circle is inscribed in a square, the diameter of the circle is equal to the side length of the square. The problem gives the radius of the circle, which is 5 units. \n\nThe diameter of the circle is $2 * radius = 2 * 5 = 10$ units.\n\nSince the diameter of the circle is equal to the side length of the square, the side length of the square is 10 units.\n\nThe area of a square is calculated by the formula $Area = side^2$.\n$Area = 10^2 = 100$ square units.\n\nThe coordinates of the circle's center (3, 4) are irrelevant to the calculation of the area of the square, but they confirm that the circle is a real geometric object.",
+      difficulty: "easy",
     },
   ];
 
@@ -310,7 +272,14 @@ export default function MathQuestion({
         <p>
           Select an answer and click Submit, or wait for the timer to run out.
         </p>
-        <p>Click the "Get Hint" button if you need help with the problem.</p>
+        <p>
+          Press{" "}
+          <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs">
+            Ctrl+H
+          </kbd>{" "}
+          or hover the 💡 icon in the top-right corner for 3 seconds to get an
+          AI-powered hint.
+        </p>
       </div>
     </div>
   );

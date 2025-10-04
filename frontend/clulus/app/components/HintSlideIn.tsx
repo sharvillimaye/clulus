@@ -26,6 +26,10 @@ export default function HintSlideIn({
   useEffect(() => {
     if (isVisible) {
       setIsAnimating(true);
+      // Automatically start generating hint when modal appears
+      setIsGenerating(true);
+      setError("");
+      setGeneratedText("");
     }
   }, [isVisible]);
 
@@ -89,8 +93,7 @@ export default function HintSlideIn({
         {/* Content */}
         <div className="mb-4">
           <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">
-            Need help with this math problem? Click "Get Hint" to receive an
-            AI-powered hint.
+            Generating an AI-powered hint for this math problem...
           </p>
 
           {error ? (
@@ -116,16 +119,9 @@ export default function HintSlideIn({
         <div className="flex gap-2">
           <button
             onClick={handleClose}
-            className="flex-1 px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 text-sm font-medium"
+            className="w-full px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 text-sm font-medium"
           >
-            No Thanks
-          </button>
-          <button
-            onClick={handleAcceptHint}
-            disabled={isGenerating}
-            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
-          >
-            {isGenerating ? "Generating..." : "Get Hint"}
+            Close
           </button>
         </div>
 

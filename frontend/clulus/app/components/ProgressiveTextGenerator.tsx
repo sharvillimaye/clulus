@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { GoogleGenAI } from "@google/genai";
 import 'dotenv/config';
-import { ElevenLabsClient, play } from '@elevenlabs/elevenlabs-js';
 
 // const elevenlabs = new ElevenLabsClient();
 // const audio = await elevenlabs.textToSpeech.convert('JBFqnCBsd6RMkjVDRZzb', {
@@ -23,7 +22,6 @@ interface ProgressiveTextGeneratorProps {
 }
 
 export default function ProgressiveTextGenerator({
-  difficulty,
   onTextUpdate,
   onComplete,
   isGenerating,
@@ -50,12 +48,6 @@ export default function ProgressiveTextGenerator({
           "Google API key not found. Please set NEXT_PUBLIC_GOOGLE_API_KEY environment variable."
         );
       }
-      const difficultyPrompts = {
-        easy: "Give a simple, encouraging hint for this math problem. Focus on basic concepts and step-by-step guidance. Use simple language and encourage the student.",
-        medium:
-          "Provide a helpful hint that guides the student toward the solution without giving away the answer. Include key concepts and approaches. Challenge them to think deeper.",
-        hard: "Give an advanced hint that challenges the student to think deeper about the problem. Include mathematical reasoning and multiple approaches. Encourage problem-solving skills.",
-      };
 
       const prompt = `You are an expert math tutor. Analyze the attached screenshot of a math problem and generate exactly THREE tags in this specific format.
 
@@ -65,12 +57,11 @@ INSTRUCTIONS:
 - Generate exactly 3 tags: <hint>, <audio_script>, and <question>
 - Don't repeat tags or create multiple instances
 - Keep responses concise and helpful
+- Use LaTeX notation for mathematical expressions (e.g., $x^2$, $\\frac{a}{b}$, $\\int_0^1 f(x) dx$)
 
 FORMAT (copy exactly):
-<hint>Write a helpful 2-3 sentence hint that guides the student without giving away the answer</hint>
-<audio_script>Write a brief 5-second audio script to explain the problem</audio_script>
-<question>Write the exact mathematical question that the student is asking</question>
-
+<hint>Write a helpful 2 sentence hint that guides the student WITHOUT giving away the answer, focus on helping develop intuition and problem-solving skills. Use LaTeX for math expressions.</hint>
+<question>Write the exact mathematical question, keeping all essential information to solve the problem, keep it as concise as possible. Use LaTeX notation for mathematical expressions.</question>
 RESPONSE:`;
 
       // Initialize Google Generative AI
@@ -128,8 +119,8 @@ RESPONSE:`;
       const questionMatch = fullResponse.match(
         /<question>([\s\S]*?)<\/question>/
       );
-      console.log("💬💬💬", audioMatch);
-      console.log("🤔🤔🤔", questionMatch);
+      console.log("💬💬💬", audioMatch?.[0]);
+      console.log("🤔🤔🤔", questionMatch?.[0]);
       if (hintMatch) {
         const hintContent = hintMatch[1].trim();
         setDisplayedText(hintContent);
@@ -166,7 +157,7 @@ RESPONSE:`;
             </div>
           ) : displayedText ? (
             <div className="whitespace-pre-wrap">
-              {displayedText}
+              <h1>{displayedText}</h1>
               {isGenerating && displayedText.length < fullText.length && (
                 <span className="animate-pulse">|</span>
               )}
