@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import MathText from "./MathText";
 
 interface MathProblem {
   question: string;
@@ -18,7 +19,7 @@ export default function MathQuestion({
   const [currentProblem, setCurrentProblem] = useState<MathProblem | null>(
     null
   );
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | string | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
@@ -80,7 +81,7 @@ export default function MathQuestion({
     setIsTimerActive(true);
   };
 
-  const handleAnswerSelect = (answer: number) => {
+  const handleAnswerSelect = (answer: number | string) => {
     if (showResult) return;
     setSelectedAnswer(answer);
   };
@@ -194,7 +195,7 @@ export default function MathQuestion({
           {/* Question */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
-              {currentProblem.question}
+              <MathText>{currentProblem.question}</MathText>
             </h2>
           </div>
 
@@ -222,7 +223,7 @@ export default function MathQuestion({
                       : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
                   }`}
                 >
-                  {option}
+                  <MathText>{String(option)}</MathText>
                 </button>
               );
             })}
@@ -259,7 +260,7 @@ export default function MathQuestion({
                 <p className="text-gray-600 dark:text-gray-400">
                   The correct answer is:{" "}
                   <span className="font-semibold text-gray-800 dark:text-white">
-                    {currentProblem.answer}
+                    <MathText>{String(currentProblem.answer)}</MathText>
                   </span>
                 </p>
               </div>
@@ -269,7 +270,7 @@ export default function MathQuestion({
                   💡 Explanation:
                 </h3>
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  {currentProblem.explanation}
+                  <MathText>{currentProblem.explanation}</MathText>
                 </p>
               </div>
 
