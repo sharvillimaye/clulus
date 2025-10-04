@@ -36,13 +36,36 @@ The server will start on `http://localhost:5000`
 
 - `GET /` - Returns a hello world message
 - `GET /health` - Health check endpoint
+- `POST /process-image` - Process base64 encoded images
 
 ## Example Usage
 
 ```bash
 # Hello world endpoint
-curl http://localhost:5000/
+curl http://localhost:8080/
 
 # Health check
-curl http://localhost:5000/health
+curl http://localhost:8080/health
+
+# Process image (example with base64 data)
+curl -X POST http://localhost:8080/process-image \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUA...",
+    "timestamp": 1699123456
+  }'
 ```
+
+## Image Processing
+
+The `/process-image` endpoint accepts JSON requests with:
+- `image`: Base64 encoded image (with or without data URL prefix)
+- `timestamp`: Unix timestamp
+
+The endpoint will:
+- Decode the base64 image
+- Extract image metadata (dimensions, format, etc.)
+- Save the image to `processed_images/` directory
+- Return processing information
+
+Images are saved with filenames like: `image_{timestamp}_{current_time}.{format}`
