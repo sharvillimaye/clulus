@@ -9,6 +9,7 @@ interface HintSlideInProps {
   onAcceptHint: () => void;
   difficulty?: "easy" | "medium" | "hard";
   screenshot?: string;
+  customQuestion?: string;
 }
 
 export default function HintSlideIn({
@@ -17,6 +18,7 @@ export default function HintSlideIn({
   onAcceptHint,
   difficulty = "medium",
   screenshot,
+  customQuestion,
 }: HintSlideInProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -111,6 +113,7 @@ export default function HintSlideIn({
               isGenerating={isGenerating}
               onError={handleError}
               screenshot={screenshot}
+              customQuestion={customQuestion}
             />
           )}
         </div>

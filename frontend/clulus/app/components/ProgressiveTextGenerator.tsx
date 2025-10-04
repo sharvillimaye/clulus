@@ -2,15 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { GoogleGenAI } from "@google/genai";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import MathVideoPlayer from "./MathVideoPlayer";
-
-// const elevenlabs = new ElevenLabsClient();
-// const audio = await elevenlabs.textToSpeech.convert('JBFqnCBsd6RMkjVDRZzb', {
-//     text: 'The first move is what sets everything in motion.',
-//     modelId: 'eleven_multilingual_v2',
-//     outputFormat: 'mp3_44100_128',
-// });
-// await play(audio);
 
 interface ProgressiveTextGeneratorProps {
   difficulty: "easy" | "medium" | "hard";
@@ -19,6 +12,7 @@ interface ProgressiveTextGeneratorProps {
   isGenerating: boolean;
   onError: (error: string) => void;
   screenshot?: string; // Base64 encoded screenshot
+  customQuestion?: string; // Custom question text for text-based analysis
 }
 
 export default function ProgressiveTextGenerator({
@@ -27,6 +21,7 @@ export default function ProgressiveTextGenerator({
   isGenerating,
   onError,
   screenshot,
+  customQuestion,
 }: ProgressiveTextGeneratorProps) {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -38,8 +33,13 @@ export default function ProgressiveTextGenerator({
   const [videoHoverTimer, setVideoHoverTimer] = useState(0);
   const [isVideoHovering, setIsVideoHovering] = useState(false);
   const [hasHoveredForVideo, setHasHoveredForVideo] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<string | null>(null);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioScript, setAudioScript] = useState<string>("");
   const abortControllerRef = useRef<AbortController | null>(null);
   const videoHoverIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Function to generate video
   const generateVideo = async (mathQuestion: string) => {
@@ -75,6 +75,77 @@ export default function ProgressiveTextGenerator({
     }
   };
 
+  // Function to generate audio using ElevenLabs SDK
+  const generateAudio = async (text: string) => {
+    if (!text.trim() || isGeneratingAudio) return;
+
+    try {
+      setIsGeneratingAudio(true);
+
+      const elevenlabs = new ElevenLabsClient({
+        apiKey: process.env.NEXT_PUBLIC_ELEVENLABS_KEY || "",
+      });
+
+      const audio = await elevenlabs.textToSpeech.convert(
+        "JBFqnCBsd6RMkjVDRZzb",
+        {
+          text: text,
+          modelId: "eleven_multilingual_v2",
+          outputFormat: "mp3_44100_128",
+          voiceSettings: {
+            stability: 0.5,
+            similarityBoost: 0.5,
+          },
+        }
+      );
+
+      // Convert the audio stream to a blob URL
+      const reader = audio.getReader();
+      const chunks: Uint8Array[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+
+      const audioArrayBuffer = new Uint8Array(
+        chunks.reduce((acc, chunk) => acc + chunk.length, 0)
+      );
+      let offset = 0;
+      for (const chunk of chunks) {
+        audioArrayBuffer.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      const audioBlob = new Blob([audioArrayBuffer], { type: "audio/mpeg" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      setAudioBlob(audioUrl);
+      console.log("Audio generated successfully");
+    } catch (err) {
+      console.error("Audio generation error:", err);
+    } finally {
+      setIsGeneratingAudio(false);
+    }
+  };
+
+  // Function to play audio
+  const playAudio = () => {
+    if (audioBlob && audioRef.current) {
+      audioRef.current.play();
+      setIsPlayingAudio(true);
+    }
+  };
+
+  // Function to stop audio
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlayingAudio(false);
+    }
+  };
+
   // Function to generate hint using Google Gemini AI
   const generateHint = async () => {
     try {
@@ -91,7 +162,25 @@ export default function ProgressiveTextGenerator({
         );
       }
 
-      const prompt = `You are an expert math tutor. Analyze the attached screenshot of a math problem and generate exactly THREE tags in this specific format.
+      const prompt = customQuestion
+        ? `You are an expert math tutor. Analyze the following math question and generate exactly THREE tags in this specific format.
+
+INSTRUCTIONS:
+- Read the math question carefully to understand what the student is asking
+- Identify the mathematical concepts and difficulty level
+- Generate exactly 3 tags: <hint>, <audio_script>, and <question>
+- Don't repeat tags or create multiple instances
+- Keep responses concise and helpful
+- Use LaTeX notation for mathematical expressions (e.g., $x^2$, $\\frac{a}{b}$, $\\int_0^1 f(x) dx$)
+
+MATH QUESTION: "${customQuestion}"
+
+FORMAT (copy exactly):
+<hint>Write a helpful 2 sentence hint that guides the student WITHOUT giving away the answer, focus on helping develop intuition and problem-solving skills. Use LaTeX for math expressions.</hint>
+<audio_script>Write a detailed 3-4 sentence audio explanation that auditory learners can listen to. This should be more comprehensive than the hint and explain the problem step-by-step in a conversational tone. Use natural language, avoid LaTeX, and make it sound like a friendly tutor speaking directly to the student.</audio_script>
+<question>Write the exact mathematical question, keeping all essential information to solve the problem, keep it as concise as possible. Use LaTeX notation for mathematical expressions.</question>
+RESPONSE:`
+        : `You are an expert math tutor. Analyze the attached screenshot of a math problem and generate exactly THREE tags in this specific format.
 
 INSTRUCTIONS:
 - Look at the screenshot carefully to understand the math problem
@@ -103,6 +192,7 @@ INSTRUCTIONS:
 
 FORMAT (copy exactly):
 <hint>Write a helpful 2 sentence hint that guides the student WITHOUT giving away the answer, focus on helping develop intuition and problem-solving skills. Use LaTeX for math expressions.</hint>
+<audio_script>Write a detailed 3-4 sentence audio explanation that auditory learners can listen to. This should be more comprehensive than the hint and explain the problem step-by-step in a conversational tone. Use natural language, avoid LaTeX, and make it sound like a friendly tutor speaking directly to the student.</audio_script>
 <question>Write the exact mathematical question, keeping all essential information to solve the problem, keep it as concise as possible. Use LaTeX notation for mathematical expressions.</question>
 RESPONSE:`;
 
@@ -114,13 +204,18 @@ RESPONSE:`;
       const models = await genAI.models.list();
       console.log("Available models:", models);
 
-      // Prepare content with image only
+      // Prepare content with image or text
       const contentParts = [];
 
       console.log("Screenshot provided:", !!screenshot);
+      console.log("Custom question provided:", !!customQuestion);
       console.log("Screenshot length:", screenshot?.length || 0);
 
-      if (screenshot) {
+      if (customQuestion) {
+        // Text-based analysis
+        contentParts.push({ text: prompt });
+      } else if (screenshot) {
+        // Image-based analysis
         const base64Data = screenshot.replace(
           /^data:image\/[a-z]+;base64,/,
           ""
@@ -135,7 +230,9 @@ RESPONSE:`;
         });
         contentParts.push({ text: prompt });
       } else {
-        throw new Error("No screenshot provided for analysis");
+        throw new Error(
+          "No screenshot or custom question provided for analysis"
+        );
       }
 
       const result = await genAI.models.generateContentStream({
@@ -166,6 +263,15 @@ RESPONSE:`;
         const hintContent = hintMatch[1].trim();
         setDisplayedText(hintContent);
         onTextUpdate(hintContent);
+      }
+
+      // Extract and store the audio script for audio generation
+      if (audioMatch) {
+        const audioContent = audioMatch[1].trim();
+        setAudioScript(audioContent);
+        console.log("🎵 Extracted audio script:", audioContent);
+        // Auto-generate audio when script is extracted
+        generateAudio(audioContent);
       }
 
       // Extract and store the question for video generation
@@ -284,6 +390,59 @@ RESPONSE:`;
           )}
         </div>
       </div>
+
+      {/* Audio Player for Auditory Learners */}
+      {audioScript && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+          <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2 text-sm">
+            🎧 Audio Explanation:
+          </h4>
+          <div className="text-xs text-green-800 dark:text-green-200 mb-3">
+            Perfect for auditory learners! Listen to a detailed explanation of
+            this problem.
+          </div>
+
+          {/* Audio Controls */}
+          <div className="flex items-center gap-3">
+            {isGeneratingAudio ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                <span className="text-sm">Generating audio...</span>
+              </div>
+            ) : audioBlob ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={isPlayingAudio ? stopAudio : playAudio}
+                  className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium flex items-center gap-1"
+                >
+                  {isPlayingAudio ? "⏸️ Pause" : "▶️ Play"}
+                </button>
+                <span className="text-sm text-green-700 dark:text-green-300">
+                  Audio ready!
+                </span>
+              </div>
+            ) : (
+              <button
+                onClick={() => generateAudio(audioScript)}
+                className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
+              >
+                🎵 Generate Audio
+              </button>
+            )}
+          </div>
+
+          {/* Hidden audio element */}
+          {audioBlob && (
+            <audio
+              ref={audioRef}
+              src={audioBlob}
+              onEnded={() => setIsPlayingAudio(false)}
+              onPause={() => setIsPlayingAudio(false)}
+              onPlay={() => setIsPlayingAudio(true)}
+            />
+          )}
+        </div>
+      )}
 
       {/* Math Video Player - Only show when video is generated and user has hovered for 3 seconds */}
       {extractedQuestion && videoGenerated && showVideo && videoBlob && (

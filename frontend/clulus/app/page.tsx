@@ -7,8 +7,8 @@ import HintSlideIn from "./components/HintSlideIn";
 
 interface MathProblem {
   question: string;
-  answer: number;
-  options: number[];
+  answer: number | string;
+  options: number[] | string[];
   explanation: string;
   difficulty: "easy" | "medium" | "hard";
 }
@@ -19,6 +19,11 @@ export default function Home() {
   const [screenshot, setScreenshot] = useState<string>("");
   const [hoverProgress, setHoverProgress] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [questionMode, setQuestionMode] = useState<"predefined" | "custom">(
+    "predefined"
+  );
+  const [customQuestion, setCustomQuestion] = useState<string>("");
+  const [customQuestionSubmitted, setCustomQuestionSubmitted] = useState(false);
 
   const handleShowHint = async () => {
     // Capture screenshot of the math question area
@@ -86,6 +91,31 @@ export default function Home() {
 
   const handleAcceptHint = () => {};
 
+  // Handle custom question submission
+  const handleCustomQuestionSubmit = () => {
+    if (customQuestion.trim()) {
+      // Create a custom MathProblem object
+      const customProblem: MathProblem = {
+        question: customQuestion.trim(),
+        answer: "Custom Question", // Placeholder since we don't know the answer
+        options: ["This is a custom question for demonstration"],
+        explanation:
+          "This is a custom question you entered. The AI will analyze it and provide hints based on the mathematical content.",
+        difficulty: "medium", // Default difficulty for custom questions
+      };
+
+      setQContent(customProblem);
+      setCustomQuestionSubmitted(true);
+    }
+  };
+
+  // Reset custom question mode
+  const handleResetCustomQuestion = () => {
+    setCustomQuestion("");
+    setCustomQuestionSubmitted(false);
+    setQContent(null);
+  };
+
   // Add keyboard shortcut to trigger hints (Ctrl+H or Cmd+H)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -135,9 +165,130 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="flex flex-col h-screen">
+        {/* Question Mode Toggle */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                Question Mode
+              </h2>
+              <div className="flex items-center gap-4">
+                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                  <button
+                    onClick={() => {
+                      setQuestionMode("predefined");
+                      handleResetCustomQuestion();
+                    }}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      questionMode === "predefined"
+                        ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Predefined Questions
+                  </button>
+                  <button
+                    onClick={() => {
+                      setQuestionMode("custom");
+                      handleResetCustomQuestion();
+                    }}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      questionMode === "custom"
+                        ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Custom Question
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Question Input */}
+            {questionMode === "custom" && (
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label
+                    htmlFor="customQuestion"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Enter your math question:
+                  </label>
+                  <textarea
+                    id="customQuestion"
+                    value={customQuestion}
+                    onChange={(e) => setCustomQuestion(e.target.value)}
+                    placeholder="e.g., What is the derivative of x² + 3x + 2?"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                    rows={3}
+                    disabled={customQuestionSubmitted}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCustomQuestionSubmit}
+                    disabled={!customQuestion.trim() || customQuestionSubmitted}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    {customQuestionSubmitted
+                      ? "Question Submitted"
+                      : "Submit Question"}
+                  </button>
+                  {customQuestionSubmitted && (
+                    <button
+                      onClick={handleResetCustomQuestion}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Main Content Area - Math Question */}
         <div className="flex-1 flex items-center justify-center p-8">
-          <MathQuestion setQContent={setQContent} />
+          {questionMode === "predefined" ? (
+            <MathQuestion setQContent={(content) => setQContent(content)} />
+          ) : customQuestionSubmitted && qContent ? (
+            <div className="w-full max-w-2xl mx-auto" data-math-component>
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+                <div className="text-center mb-6">
+                  <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">
+                    Custom Math Question
+                  </h1>
+                  <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900">
+                    CUSTOM QUESTION
+                  </div>
+                </div>
+
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
+                    {qContent.question}
+                  </h2>
+                </div>
+
+                <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+                  <p>
+                    This is your custom question. Use the hint button (💡) in
+                    the top-right corner or press{" "}
+                    <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs">
+                      Ctrl+H
+                    </kbd>{" "}
+                    to get an AI-powered hint and analysis.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center text-gray-500 dark:text-gray-400">
+              <p className="text-lg">
+                Enter a custom math question above to get started!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Animated Hint Trigger - Top Right Corner */}
@@ -233,7 +384,8 @@ export default function Home() {
         onClose={handleCloseHint}
         onAcceptHint={handleAcceptHint}
         difficulty={qContent?.difficulty || "medium"}
-        screenshot={screenshot}
+        screenshot={questionMode === "predefined" ? screenshot : ""}
+        customQuestion={questionMode === "custom" ? qContent?.question : ""}
       />
     </div>
   );
