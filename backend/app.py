@@ -1,15 +1,12 @@
 from flask import Flask, jsonify, request, send_from_directory, send_file
 from flask_cors import CORS
 import base64
-import io
 import json
 import os
 import subprocess
 import sys
 import uuid
 from pathlib import Path
-from PIL import Image
-import time
 
 # Add the video_generator directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'video_generator'))

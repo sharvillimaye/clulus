@@ -1,10 +1,7 @@
 # render_scene.py
-import json, os, math
+import json, os
 from manim import *
 from lesson_schema import Lesson
-from sympy import symbols, sympify, lambdify
-import numpy as np
-import sympy as sp
 import re, numpy as np, sympy as sp
 from sympy.parsing.sympy_parser import (
     parse_expr,

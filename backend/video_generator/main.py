@@ -1,5 +1,5 @@
 # app.py
-import os, json, subprocess, sys, uuid, shutil
+import os, json, subprocess, sys
 from pathlib import Path
 from llm_client import ask_llm
 from lesson_schema import Lesson
@@ -43,7 +43,7 @@ def main():
     data = json.loads(json_str)
     lesson = Lesson.model_validate(data)
 
-    # Save JSON for the scene to read
+    # Sacve JSON for the scene to read
     json_path = BUILD / "lesson.json"
     with open(json_path, "w") as f:
         json.dump(lesson.model_dump(), f, indent=2)
