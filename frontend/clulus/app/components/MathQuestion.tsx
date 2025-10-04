@@ -19,7 +19,9 @@ export default function MathQuestion({
   const [currentProblem, setCurrentProblem] = useState<MathProblem | null>(
     null
   );
-  const [selectedAnswer, setSelectedAnswer] = useState<number | string | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | string | null>(
+    null
+  );
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
@@ -27,48 +29,52 @@ export default function MathQuestion({
   const [isTimerActive, setIsTimerActive] = useState(false);
 
   const mathProblems: MathProblem[] = [
-  {
-    question:
-      "What is the derivative of $f(x) = \sin(x)$?",
-    answer: "f'(x) = cos(x)",
-    options: ["f'(x) = -sin(x)", "f'(x) = cos(x)", "f'(x) = -cos(x)", "f'(x) = tan(x)"],
-    explanation:
-      "The derivative of the sine function is a fundamental rule in calculus, stating that $\frac{d}{dx}(\sin(x)) = \cos(x)$. The video will plot both the original sine wave and its derivative, the cosine wave. This visualization clearly shows how the slope of the sine function at any point corresponds to the value of the cosine function at that same point.",
-    difficulty: "easy",
-  },
-  {
-  question:
-    "What is the indefinite integral of $$\\int (3x^2 + 2x + 1) dx$$?",
-  answer: "$x^3 + x^2 + x + C$",
-  options: [
-    "$x^3 + x^2 + x$",
-    "$x^3 + x^2 + x + C$",
-    "$6x + 2 + C$",
-    "$3x^3 + 2x^2 + x + C$"
-  ],
-  explanation:
-    "To find the indefinite integral, we find the antiderivative of each term of the function $f(x) = 3x^2 + 2x + 1$ using the power rule, which states that $\\int x^n dx = \\frac{x^{n+1}}{n+1}$.\n\nThe antiderivative of $3x^2$ is $\\frac{3x^{2+1}}{2+1} = x^3$.\n\nThe antiderivative of $2x$ is $\\frac{2x^{1+1}}{1+1} = x^2$.\n\nThe antiderivative of the constant $1$ is $x$.\n\nCombining these, we get $x^3 + x^2 + x$. Because the derivative of any constant is zero, we must add a constant of integration, C, to represent all possible antiderivative functions. Thus, the final answer is $x^3 + x^2 + x + C$.",
-  difficulty: "easy",
-},
-  {
-    question: "What is the vertex of the parabola given by the equation $y = x^2 - 6x + 5$?",
-    answer: "(3, -4)",
-    options: ["(3, 5)", "(-6, 5)", "(3, -4)", "(-3, 32)"],
-    explanation:
-      "To find the vertex of a parabola in the form $y = ax^2 + bx + c$, we can use the formula for the x-coordinate: $x = -\frac{b}{2a}$.\n\nIn this equation, $a=1$, $b=-6$, and $c=5$.\n\nFirst, calculate the x-coordinate:\n$x = -\frac{-6}{2(1)} = \frac{6}{2} = 3$.\n\nNext, substitute this x-value back into the parabola's equation to find the y-coordinate:\n$y = (3)^2 - 6(3) + 5 = 9 - 18 + 5 = -4$.\n\nTherefore, the vertex of the parabola is at the point (3, -4). The video visualization will plot this parabola, and you can clearly see the minimum point at these coordinates.",
-    difficulty: "easy",
-  },
-{
-    question:
-      "A circle with a radius of 5 units is inscribed in a square. What is the area of the square?",
-    answer: 100,
-    options: [25, 50, 75, 100],
-    explanation:
-      "When a circle is inscribed in a square, the diameter of the circle is equal to the side length of the square. The radius is 5, so the diameter is $2 \\times 5 = 10$ units. Therefore, the side length of the square is 10 units.\n\nThe area of a square is $side^2$, so the area is $10^2 = 100$ square units.",
-    difficulty: "easy",
-  },
-];
-
+    {
+      question: "What is the derivative of $f(x) = sin(x)$?",
+      answer: "f'(x) = cos(x)",
+      options: [
+        "f'(x) = -sin(x)",
+        "f'(x) = cos(x)",
+        "f'(x) = -cos(x)",
+        "f'(x) = tan(x)",
+      ],
+      explanation:
+        "The derivative of the sine function is a fundamental rule in calculus, stating that $\frac{d}{dx}(sin(x)) = cos(x)$. The video will plot both the original sine wave and its derivative, the cosine wave. This visualization clearly shows how the slope of the sine function at any point corresponds to the value of the cosine function at that same point.",
+      difficulty: "easy",
+    },
+    {
+      question:
+        "What is the indefinite integral of $$\\int (3x^2 + 2x + 1) dx$$?",
+      answer: "$x^3 + x^2 + x + C$",
+      options: [
+        "$x^3 + x^2 + x$",
+        "$x^3 + x^2 + x + C$",
+        "$6x + 2 + C$",
+        "$3x^3 + 2x^2 + x + C$",
+      ],
+      explanation:
+        "To find the indefinite integral, we find the antiderivative of each term of the function $f(x) = 3x^2 + 2x + 1$ using the power rule, which states that $\\int x^n dx = \\frac{x^{n+1}}{n+1}$.\n\nThe antiderivative of $3x^2$ is $\\frac{3x^{2+1}}{2+1} = x^3$.\n\nThe antiderivative of $2x$ is $\\frac{2x^{1+1}}{1+1} = x^2$.\n\nThe antiderivative of the constant $1$ is $x$.\n\nCombining these, we get $x^3 + x^2 + x$. Because the derivative of any constant is zero, we must add a constant of integration, C, to represent all possible antiderivative functions. Thus, the final answer is $x^3 + x^2 + x + C$.",
+      difficulty: "easy",
+    },
+    {
+      question:
+        "What is the vertex of the parabola given by the equation $y = x^2 - 6x + 5$?",
+      answer: "(3, -4)",
+      options: ["(3, 5)", "(-6, 5)", "(3, -4)", "(-3, 32)"],
+      explanation:
+        "To find the vertex of a parabola in the form $y = ax^2 + bx + c$, we can use the formula for the x-coordinate: $x = -\frac{b}{2a}$.\n\nIn this equation, $a=1$, $b=-6$, and $c=5$.\n\nFirst, calculate the x-coordinate:\n$x = -\frac{-6}{2(1)} = \frac{6}{2} = 3$.\n\nNext, substitute this x-value back into the parabola's equation to find the y-coordinate:\n$y = (3)^2 - 6(3) + 5 = 9 - 18 + 5 = -4$.\n\nTherefore, the vertex of the parabola is at the point (3, -4). The video visualization will plot this parabola, and you can clearly see the minimum point at these coordinates.",
+      difficulty: "easy",
+    },
+    {
+      question:
+        "A circle with a radius of 5 units is inscribed in a square. What is the area of the square?",
+      answer: 100,
+      options: [25, 50, 75, 100],
+      explanation:
+        "When a circle is inscribed in a square, the diameter of the circle is equal to the side length of the square. The radius is 5, so the diameter is $2 \\times 5 = 10$ units. Therefore, the side length of the square is 10 units.\n\nThe area of a square is $side^2$, so the area is $10^2 = 100$ square units.",
+      difficulty: "easy",
+    },
+  ];
 
   const generateNewProblem = () => {
     const randomIndex = Math.floor(Math.random() * mathProblems.length);
