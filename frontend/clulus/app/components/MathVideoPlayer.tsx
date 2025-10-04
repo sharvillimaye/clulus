@@ -13,17 +13,21 @@ interface MathVideoPlayerProps {
   question: string;
   className?: string;
   autoGenerate?: boolean;
+  showVideo?: boolean;
+  videoBlob?: string;
 }
 
 export default function MathVideoPlayer({
   question,
   className = "",
   autoGenerate = false,
+  showVideo = false,
+  videoBlob: propVideoBlob,
 }: MathVideoPlayerProps) {
   const [videoBlob, setVideoBlob] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showVideo, setShowVideo] = useState(false);
+  const [videoVisible, setVideoVisible] = useState(false);
 
   const generateVideo = useCallback(async (mathQuestion: string) => {
     if (!mathQuestion.trim()) return;
@@ -51,7 +55,7 @@ export default function MathVideoPlayer({
 
       if (data.success) {
         setVideoBlob(data.video_blob);
-        setShowVideo(true);
+        setVideoVisible(true);
       } else {
         throw new Error("Video generation failed");
       }
@@ -65,7 +69,7 @@ export default function MathVideoPlayer({
 
   const clearVideo = useCallback(() => {
     setVideoBlob(null);
-    setShowVideo(false);
+    setVideoVisible(false);
     setError(null);
   }, []);
 
@@ -76,34 +80,35 @@ export default function MathVideoPlayer({
     }
   }, [question, autoGenerate, generateVideo]);
 
+  // Handle showVideo prop
+  React.useEffect(() => {
+    if (showVideo && videoBlob) {
+      setVideoVisible(true);
+    } else if (!showVideo) {
+      setVideoVisible(false);
+    }
+  }, [showVideo, videoBlob]);
+
+  // Handle prop videoBlob
+  React.useEffect(() => {
+    if (propVideoBlob) {
+      setVideoBlob(propVideoBlob);
+    }
+  }, [propVideoBlob]);
+
   return (
     <div className={`math-video-player ${className}`}>
-      {/* Controls */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => generateVideo(question)}
-          disabled={loading || !question.trim()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Generating Video...
-            </span>
-          ) : (
-            "Generate Math Animation"
-          )}
-        </button>
-
-        {videoBlob && (
+      {/* Controls - Only show clear button if video is visible */}
+      {videoVisible && videoBlob && (
+        <div className="flex gap-2 mb-4">
           <button
             onClick={clearVideo}
             className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
           >
             Clear Video
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -113,14 +118,14 @@ export default function MathVideoPlayer({
       )}
 
       {/* Video Player */}
-      {showVideo && videoBlob && (
+      {videoVisible && videoBlob && (
         <div className="video-container bg-white rounded-lg shadow-lg p-4">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-semibold text-gray-800">
               Math Animation
             </h3>
             <button
-              onClick={() => setShowVideo(false)}
+              onClick={() => setVideoVisible(false)}
               className="text-gray-500 hover:text-gray-700 transition-colors"
             >
               <svg

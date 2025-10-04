@@ -206,9 +206,9 @@ export default function Home() {
                     : "scale-100"
                 }`}
               >
-                  <div className="text-blue-600 dark:text-blue-400 text-xl group-hover:text-blue-700 dark:group-hover:text-blue-300">
-                    💡
-                  </div>
+                <div className="text-blue-600 dark:text-blue-400 text-xl group-hover:text-blue-700 dark:group-hover:text-blue-300">
+                  💡
+                </div>
               </div>
             </div>
 

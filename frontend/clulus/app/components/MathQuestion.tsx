@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 
 interface MathProblem {
   question: string;
-  answer: number;
-  options: number[];
+  answer: number | string;
+  options: number[] | string[];
   explanation: string;
   difficulty: "easy" | "medium" | "hard";
 }
@@ -25,30 +25,43 @@ export default function MathQuestion({
   const [timeLeft, setTimeLeft] = useState(30);
   const [isTimerActive, setIsTimerActive] = useState(false);
 
-  // Sample math problems
   const mathProblems: MathProblem[] = [
-    // plot problem
-    // graph problem
-    //
+    // --- Derivative Problem with Dual Plot ---
+    {
+      question: "What is the derivative of $f(x) = sin(x)$?",
+      answer: "f'(x) = cos(x)",
+      options: [
+        "f'(x) = -sin(x)",
+        "f'(x) = cos(x)",
+        "f'(x) = -cos(x)",
+        "f'(x) = tan(x)",
+      ],
+      explanation:
+        "The derivative of the sine function is a fundamental rule in calculus, stating that $\frac{d}{dx}(sin(x)) = cos(x)$. The video will plot both the original sine wave and its derivative, the cosine wave. This visualization clearly shows how the slope of the sine function at any point corresponds to the value of the cosine function at that same point.",
+      difficulty: "easy",
+    },
+    // --- Integral Problem with Plot ---
     {
       question:
-        "What is the value of the definite integral $$\\int_{1}^{2} (3x^2 + 2x + 1) dx$$?",
+        "What is the value of the definite integral $$int_{1}^{2} (3x^2 + 2x + 1) dx$$?",
       answer: 11,
       options: [9, 10, 11, 12],
       explanation:
-        "To solve this problem, we first find the antiderivative of the function $f(x) = 3x^2 + 2x + 1$. We use the power rule for integration, which states that $\\int x^n dx = \\frac{x^{n+1}}{n+1} + C$.\n\nThe antiderivative of $3x^2$ is $\\frac{3x^{2+1}}{2+1} = \\frac{3x^3}{3} = x^3$.\n\nThe antiderivative of $2x$ is $\\frac{2x^{1+1}}{1+1} = \\frac{2x^2}{2} = x^2$.\n\nThe antiderivative of the constant $1$ is $x$.\n\nSo, the antiderivative of the entire function is $F(x) = x^3 + x^2 + x$. We can ignore the constant of integration, C, because it will cancel out during the evaluation of the definite integral.\n\nNext, we use the Fundamental Theorem of Calculus, which states that $\\int_{a}^{b} f(x) dx = F(b) - F(a)$.\n\nWe evaluate the antiderivative at the upper limit (2) and the lower limit (1):\n\nEvaluation at $x=2$: $F(2) = (2)^3 + (2)^2 + 2 = 8 + 4 + 2 = 14$.\n\nEvaluation at $x=1$: $F(1) = (1)^3 + (1)^2 + 1 = 1 + 1 + 1 = 3$.\n\nFinally, we subtract the lower limit value from the upper limit value:\n\n$F(2) - F(1) = 14 - 3 = 11$.\n\nTherefore, the value of the definite integral is 11.",
-      difficulty: "easy",
+        "First, find the antiderivative of $f(x) = 3x^2 + 2x + 1$ using the power rule. The antiderivative is $F(x) = x^3 + x^2 + x$. Next, use the Fundamental Theorem of Calculus, $F(b) - F(a)$.\n\nEvaluate at the upper limit: $F(2) = (2)^3 + (2)^2 + 2 = 14$.\n\nEvaluate at the lower limit: $F(1) = (1)^3 + (1)^2 + 1 = 3$.\n\nSubtract the lower from the upper: $14 - 3 = 11$.",
+      difficulty: "medium",
     },
+    // --- Geometric Problem with Shape Plot ---
     {
       question:
-        "A circle with center (3, 4) and a radius of 5 units is inscribed in a square. What is the area of the square?",
+        "A circle with a radius of 5 units is inscribed in a square. What is the area of the square?",
       answer: 100,
       options: [25, 50, 75, 100],
       explanation:
-        "When a circle is inscribed in a square, the diameter of the circle is equal to the side length of the square. The problem gives the radius of the circle, which is 5 units. \n\nThe diameter of the circle is $2 * radius = 2 * 5 = 10$ units.\n\nSince the diameter of the circle is equal to the side length of the square, the side length of the square is 10 units.\n\nThe area of a square is calculated by the formula $Area = side^2$.\n$Area = 10^2 = 100$ square units.\n\nThe coordinates of the circle's center (3, 4) are irrelevant to the calculation of the area of the square, but they confirm that the circle is a real geometric object.",
+        "When a circle is inscribed in a square, the diameter of the circle is equal to the side length of the square. The radius is 5, so the diameter is $2 \times 5 = 10$ units. Therefore, the side length of the square is 10 units.\n\nThe area of a square is $side^2$, so the area is $10^2 = 100$ square units.",
       difficulty: "easy",
     },
   ];
+
 
   const generateNewProblem = () => {
     const randomIndex = Math.floor(Math.random() * mathProblems.length);
