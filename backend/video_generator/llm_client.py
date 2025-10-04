@@ -9,9 +9,7 @@ from google.generativeai.types import GenerationConfig, Tool, FunctionDeclaratio
 
 from lesson_schema import Lesson
 
-
 # --- 1) Load your API key ---
-# Correctly loading from .env
 load_dotenv("../../.env")
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 if not GEMINI_KEY:
@@ -33,19 +31,27 @@ JSON_SCHEMA: Dict[str, Any] = {
         "steps": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "An ordered list of strings. Each string is a self-contained LaTeX math expression WITHOUT surrounding '$' or '$$' delimiters. For example, a valid step is 'f(x)=x^2+1', not '$f(x)=x^2+1$'."
+            "description": "An ordered list of strings. Each string is a self-contained LaTeX math expression WITHOUT surrounding '$' or '$$' delimiters. For example, a valid step is 'f(x)=x^2+1', not '$f(x)=x^2+1$'. Maximum of 85 characters. Maximum of 3 steps."
         },
-        "function_tex": {
-            "type": "string",
-            "description": "A single-variable expression in x to plot, in LaTeX format."
+        "function_plots": {
+            "type": "array",
+            "description": "A list of functions to plot on the same graph, with a maximum of 2 items.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "expression": {"type": "string", "description": "The mathematical expression to plot, e.g., 'x**2 - 3*x'."},
+                    "label": {"type": "string", "description": "The LaTeX label for the function in the plot legend, e.g., 'f(x)'."}
+                },
+                "required": ["expression", "label"]
+            }
         },
         "x_min": {
             "type": "number",
-            "description": "The minimum value for the plot's x-axis."
+            "description": "The minimum value for the plot's x-axis. Required if plots are provided."
         },
         "x_max": {
             "type": "number",
-            "description": "The maximum value for the plot's x-axis."
+            "description": "The maximum value for the plot's x-axis. Required if plots are provided."
         }
     },
     "required": ["title", "steps"],
@@ -53,15 +59,19 @@ JSON_SCHEMA: Dict[str, Any] = {
 
 # --- 4) System/style prompt ---
 SYSTEM_INSTRUCTION = (
-    "You are a helpful math explainer.\n"
-    "Given a user's math question, you MUST call the `submit_lesson` function "
+    "You are a helpful and concise math explainer.\n"
+    "Given a user's math question, you MUST call the `submit_lesson` function\n"
     "to provide a structured response with a title and step-by-step solution.\n"
-    "Rules:\n"
+    "CRITICAL RULES:\n"
     "1. Use simple LaTeX and keep each step concise and purely mathematical.\n"
-    "2. Each string in the `steps` array must be a complete math expression and MUST NOT be wrapped in '$' or '$$'. The title, however, can contain inline '$...$' math."
+    "2. For questions involving functions (like derivatives), use `function_plots` to plot BOTH the original function and the final result (max 2 plots). Label them appropriately (e.g., 'f(x)' and 'f\\'(x)').\n"
+    "3. The `steps` array must contain a maximum of 3 steps.\n"
+    "4. Each string in the `steps` array must be a maximum of 85 characters long.\n"
+    "5. Each string in the `steps` array must be a complete math expression and MUST NOT be wrapped in '$' or '$$'.\n"
+    "6. The title can contain inline '$...$' math, but the steps cannot."
 )
 
-# --- 5) Few-shot examples (No changes needed, they already follow the rule) ---
+# --- 5) Few-shot examples (No changes needed, they perfectly demonstrate when to plot) ---
 FEW_SHOT = [
     {
         "role": "user",
@@ -77,7 +87,16 @@ FEW_SHOT = [
                     r"f'(x)=\frac{d}{dx}(e^x)+\frac{d}{dx}(3x^2)",
                     r"f'(x)=e^x+6x"
                 ],
-                "function_tex": r"e^x + 3x^2",
+                "function_plots": [
+                    {
+                        "expression": "e**x + 3*x**2",
+                        "label": "f(x)"
+                    },
+                    {
+                        "expression": "e**x + 6*x",
+                        "label": "f'(x)"
+                    }
+                ],
                 "x_min": -2,
                 "x_max": 2
             })
@@ -99,7 +118,7 @@ FEW_SHOT = [
                 ]
             })
         }],
-    }
+    },
 ]
 
 
@@ -126,7 +145,6 @@ def _build_model():
 MODEL = _build_model()
 
 
-# Your robust conversion function - this is a great addition.
 def _convert_to_json_serializable(obj):
     """Recursively convert objects to JSON-serializable types."""
     if hasattr(obj, '__class__') and 'RepeatedComposite' in str(obj.__class__):
@@ -143,13 +161,16 @@ def _convert_to_json_serializable(obj):
     else:
         return obj
 
-def _validate_or_raise(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Validates the dictionary against the Pydantic model."""
+
+def _validate_or_raise(data: Dict[str, Any]) -> Lesson:
+    """
+    Validates the dictionary against the Pydantic model and returns the model instance.
+    Pydantic's `model_validate` is smart enough to handle the API's special types.
+    """
     try:
-        # Your improved validation logic is solid.
-        converted_data = _convert_to_json_serializable(data)
-        _ = Lesson.model_validate(converted_data)
-        return converted_data
+        # Pydantic parses the raw dict (with MapComposite) and creates a clean model
+        lesson_instance = Lesson.model_validate(data)
+        return lesson_instance
     except Exception as e:
         raise ValueError(f"Pydantic validation failed: {e}")
 
@@ -181,13 +202,20 @@ def ask_llm(question: str) -> str:
         if not function_call:
             raise ValueError("Model did not return a function call.")
 
+        # 1. Get raw dictionary-like object from the API
         data = dict(function_call.args)
-        validated_data = _validate_or_raise(data)
-        # Save successful generation for debugging
+
+        # 2. Validate and get a clean Pydantic model instance
+        lesson_instance = _validate_or_raise(data)
+
+        # 3. Use .model_dump() to get a JSON-serializable dictionary
+        serializable_data = lesson_instance.model_dump()
+
+        # Save and return the clean, serializable data
         os.makedirs("./build", exist_ok=True)
         with open("./build/lesson.json", "w") as f:
-            json.dump(validated_data, f, indent=2)
-        return json.dumps(validated_data)
+            json.dump(serializable_data, f, indent=2)
+        return json.dumps(serializable_data)
 
     except Exception as e1:
         print(f"First attempt failed: {e1}. Retrying...")
@@ -199,16 +227,17 @@ def ask_llm(question: str) -> str:
         )
         convo.append({"role": "user", "parts": [{"text": repair_msg}]})
 
-        # Second attempt
+        # Second attempt follows the same clean logic
         resp2 = MODEL.generate_content(convo, tool_config=tool_config)
         function_call_2 = resp2.candidates[0].content.parts[0].function_call
         if not function_call_2:
             raise ValueError("Model did not return a function call on retry.")
 
         data2 = dict(function_call_2.args)
-        validated_data2 = _validate_or_raise(data2)
-        # Save successful retry generation for debugging
+        lesson_instance2 = _validate_or_raise(data2)
+        serializable_data2 = lesson_instance2.model_dump()
+
         os.makedirs("./build", exist_ok=True)
         with open("./build/lesson.json", "w") as f:
-            json.dump(validated_data2, f, indent=2)
-        return json.dumps(validated_data2)
+            json.dump(serializable_data2, f, indent=2)
+        return json.dumps(serializable_data2)
