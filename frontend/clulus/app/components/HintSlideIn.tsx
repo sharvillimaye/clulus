@@ -7,7 +7,6 @@ interface HintSlideInProps {
   isVisible: boolean;
   onClose: () => void;
   onAcceptHint: () => void;
-  question?: string;
   difficulty?: "easy" | "medium" | "hard";
   screenshot?: string;
 }
@@ -16,7 +15,6 @@ export default function HintSlideIn({
   isVisible,
   onClose,
   onAcceptHint,
-  question = "What is 15 × 7?",
   difficulty = "medium",
   screenshot,
 }: HintSlideInProps) {
@@ -33,6 +31,8 @@ export default function HintSlideIn({
 
   const handleAcceptHint = () => {
     if (!isGenerating) {
+      console.log("Hint accepted, screenshot available:", !!screenshot);
+      console.log("Screenshot length:", screenshot?.length || 0);
       setIsGenerating(true);
       setError("");
       setGeneratedText("");
@@ -89,8 +89,8 @@ export default function HintSlideIn({
         {/* Content */}
         <div className="mb-4">
           <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">
-            Our AI detected signs of confusion. Would you like a helpful hint
-            for this math problem?
+            Need help with this math problem? Click "Get Hint" to receive an
+            AI-powered hint.
           </p>
 
           {error ? (
@@ -102,7 +102,6 @@ export default function HintSlideIn({
             </div>
           ) : (
             <ProgressiveTextGenerator
-              question={question}
               difficulty={difficulty}
               onTextUpdate={handleTextUpdate}
               onComplete={handleGenerationComplete}

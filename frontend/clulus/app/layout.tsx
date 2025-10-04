@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Live Webcam Feed",
-  description: "A live webcam feed application built with Next.js",
+  title: "Math Challenge App",
+  description:
+    "An interactive math challenge application with AI-powered hints",
 };
 
 export default function RootLayout({

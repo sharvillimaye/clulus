@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { GoogleGenAI } from "@google/genai";
 
 interface ProgressiveTextGeneratorProps {
-  question: string;
   difficulty: "easy" | "medium" | "hard";
   onTextUpdate: (text: string) => void;
   onComplete: () => void;
@@ -14,7 +13,6 @@ interface ProgressiveTextGeneratorProps {
 }
 
 export default function ProgressiveTextGenerator({
-  question,
   difficulty,
   onTextUpdate,
   onComplete,
@@ -35,27 +33,35 @@ export default function ProgressiveTextGenerator({
       setFullText("");
 
       // Get API key from environment variables
-      console.log("All env vars:", process.env);
+      //console.log("All env vars:", process.env);
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
       if (!apiKey) {
         throw new Error(
           "Google API key not found. Please set NEXT_PUBLIC_GOOGLE_API_KEY environment variable."
         );
       }
-      const prompt = `
-        Give a simple, encouraging hint for this math problem. Focus on basic concepts and step-by-step guidance.
-        
-        Math Problem: ${question}
-        
-        Please provide a helpful hint that:
-        1. Doesn't give away the answer directly
-        2. Guides the student toward the solution
-        3. Explains the key concepts involved
-        4. Is appropriate for ${difficulty} difficulty level
-        5. Is encouraging and supportive
-        
-        Keep the response concise but informative (2-3 sentences maximum).
-      `;
+      const difficultyPrompts = {
+        easy: "Give a simple, encouraging hint for this math problem. Focus on basic concepts and step-by-step guidance. Use simple language and encourage the student.",
+        medium:
+          "Provide a helpful hint that guides the student toward the solution without giving away the answer. Include key concepts and approaches. Challenge them to think deeper.",
+        hard: "Give an advanced hint that challenges the student to think deeper about the problem. Include mathematical reasoning and multiple approaches. Encourage problem-solving skills.",
+      };
+
+      const prompt = `You are an expert math tutor. Analyze the attached screenshot of a math problem and generate exactly THREE tags in this specific format.
+
+INSTRUCTIONS:
+- Look at the screenshot carefully to understand the math problem
+- Identify the question, answer options, and difficulty level
+- Generate exactly 3 tags: <hint>, <audio_script>, and <question>
+- Don't repeat tags or create multiple instances
+- Keep responses concise and helpful
+
+FORMAT (copy exactly):
+<hint>Write a helpful 2-3 sentence hint that guides the student without giving away the answer</hint>
+<audio_script>Write a brief 5-second audio script to explain the problem</audio_script>
+<question>Write the exact mathematical question that the student is asking</question>
+
+RESPONSE:`;
 
       // Initialize Google Generative AI
       const genAI = new GoogleGenAI({ apiKey: apiKey });
@@ -65,16 +71,28 @@ export default function ProgressiveTextGenerator({
       const models = await genAI.models.list();
       console.log("Available models:", models);
 
-      // Prepare content with text and optionally image
-      const contentParts = [{ text: prompt }];
+      // Prepare content with image only
+      const contentParts = [];
+
+      console.log("Screenshot provided:", !!screenshot);
+      console.log("Screenshot length:", screenshot?.length || 0);
 
       if (screenshot) {
+        const base64Data = screenshot.replace(
+          /^data:image\/[a-z]+;base64,/,
+          ""
+        );
+        console.log("Base64 data length:", base64Data.length);
+
         contentParts.push({
           inlineData: {
-            mimeType: "image/jpeg",
-            data: screenshot.replace(/^data:image\/[a-z]+;base64,/, ""),
+            mimeType: "image/png",
+            data: base64Data,
           },
         });
+        contentParts.push({ text: prompt });
+      } else {
+        throw new Error("No screenshot provided for analysis");
       }
 
       const result = await genAI.models.generateContentStream({
@@ -82,11 +100,30 @@ export default function ProgressiveTextGenerator({
         contents: [{ parts: contentParts }],
       });
 
+      let fullResponse = "";
       for await (const chunk of result) {
         const chunkText = chunk.text;
         if (chunkText) {
-          setDisplayedText((prev) => prev + chunkText);
+          fullResponse += chunkText;
+          setDisplayedText(fullResponse);
         }
+      }
+
+      console.log("EVERYTHING", fullResponse);
+      // Extract only the hint content
+      const hintMatch = fullResponse.match(/<hint>([\s\S]*?)<\/hint>/);
+      const audioMatch = fullResponse.match(
+        /<audio_script>([\s\S]*?)<\/audio_script>/
+      );
+      const questionMatch = fullResponse.match(
+        /<question>([\s\S]*?)<\/question>/
+      );
+      console.log("💬💬💬", audioMatch);
+      console.log("🤔🤔🤔", questionMatch);
+      if (hintMatch) {
+        const hintContent = hintMatch[1].trim();
+        setDisplayedText(hintContent);
+        onTextUpdate(hintContent);
       }
       onComplete();
     } catch (error: any) {
@@ -98,10 +135,12 @@ export default function ProgressiveTextGenerator({
     }
   };
 
-  // Start generation when component mounts or when isGenerating becomes true
+  // Start generation when isGenerating becomes true
   useEffect(() => {
-    generateHint();
-  }, []);
+    if (isGenerating) {
+      generateHint();
+    }
+  }, [isGenerating]);
 
   return (
     <div className="w-full">
