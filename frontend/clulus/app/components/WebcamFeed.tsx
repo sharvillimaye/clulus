@@ -3,8 +3,16 @@
 import { useWebcam } from "../hooks/useWebcam";
 
 export default function WebcamFeed() {
-  const { videoRef, isStreaming, error, startWebcam, stopWebcam, hasWebcam } =
-    useWebcam();
+  const {
+    videoRef,
+    isStreaming,
+    error,
+    startWebcam,
+    stopWebcam,
+    hasWebcam,
+    sentimentResults,
+    isAnalyzing,
+  } = useWebcam();
 
   const handleStartWebcam = () => {
     console.log("Start webcam button clicked");
@@ -74,6 +82,13 @@ export default function WebcamFeed() {
                 <span className="font-medium">Live</span>
               </div>
             )}
+
+            {isAnalyzing && (
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="font-medium">Analyzing...</span>
+              </div>
+            )}
           </div>
 
           {/* Status Info */}
@@ -91,6 +106,46 @@ export default function WebcamFeed() {
             )}
           </div>
         </div>
+
+        {/* Sentiment Analysis Results */}
+        {sentimentResults.length > 0 && (
+          <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
+              Sentiment Analysis Results
+            </h2>
+            <div className="space-y-3">
+              {sentimentResults
+                .slice()
+                .reverse()
+                .map((result, index) => (
+                  <div
+                    key={result.timestamp}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          result.sentiment === "positive"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                            : result.sentiment === "negative"
+                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                        }`}
+                      >
+                        {result.sentiment}
+                      </div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Confidence: {Math.round(result.confidence * 100)}%
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-500">
+                      {new Date(result.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
