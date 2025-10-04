@@ -116,16 +116,16 @@ class LessonScene(Scene):
                 self.wait(0.2)
 
         # Optional graph (DROP-IN REPLACEMENT)
-        if lesson.function_tex:
+        if lesson.function_plots:
+            PLOT_COLORS = [BLUE, GREEN]  # Colors for the 1st and 2nd plot
             x = sp.symbols("x")
 
-            # small helper to choose a "nice" tick step (1, 2, or 5 × 10^k)
             def _nice_step(span, target_ticks=6):
+                # ... (this helper function is unchanged)
                 span = float(abs(span))
-                if span == 0 or not np.isfinite(span):
-                    return 1.0
+                if span == 0 or not np.isfinite(span): return 1.0
                 raw = span / max(target_ticks, 1)
-                exp = np.floor(np.log10(raw))
+                exp = np.floor(np.log10(raw));
                 base = raw / (10 ** exp)
                 if base < 1.5:
                     nice = 1.0
@@ -138,63 +138,77 @@ class LessonScene(Scene):
                 return nice * (10 ** exp)
 
             try:
-                # parse expression (handles LaTeX like \sin(x) and plain like exp(x))
-                expr = to_sympy_expr(lesson.function_tex)
-                f = sp.lambdify(x, expr, modules=["numpy"])
+                # --- Step 1: Parse all functions and gather their data ---
+                parsed_plots = []
+                for i, plot_data in enumerate(lesson.function_plots):
+                    if i >= len(PLOT_COLORS): break  # Max 2 plots
+                    expr = to_sympy_expr(plot_data.expression)
+                    func = sp.lambdify(x, expr, modules=["numpy"])
+                    parsed_plots.append({
+                        "func": func,
+                        "label_tex": plot_data.label,
+                        "color": PLOT_COLORS[i]
+                    })
 
-                # sample the function to estimate y-bounds
-                xs = np.linspace(lesson.x_min, lesson.x_max, 600)
-                ys = f(xs)
-                ys = np.array(ys, dtype=float)
-                valid = ys[np.isfinite(ys)]
+                if not parsed_plots:
+                    raise ValueError("No valid functions to plot.")
 
-                if valid.size == 0:
+                # --- Step 2: Sample all functions to find global y-bounds ---
+                xs = np.linspace(lesson.x_min, lesson.x_max, 400)
+                all_ys = []
+                for plot in parsed_plots:
+                    ys = np.array(plot["func"](xs), dtype=float)
+                    plot["ys_sampled"] = ys  # Store for later use
+                    all_ys.append(ys[np.isfinite(ys)])
+
+                valid_ys = np.concatenate(all_ys)
+                if valid_ys.size == 0:
                     ymin, ymax = -1.0, 1.0
                 else:
-                    ymin, ymax = float(np.min(valid)), float(np.max(valid))
-                    if ymin == ymax:
-                        # flat function: pad both sides
-                        ymin -= 1.0
-                        ymax += 1.0
+                    ymin, ymax = float(np.min(valid_ys)), float(np.max(valid_ys))
+                    if ymin == ymax: ymin -= 1.0; ymax += 1.0
 
-                # padding around min/max
-                pad = 0.10 * (ymax - ymin)
-                pad = max(pad, 0.5)  # ensure at least a little breathing room
-                ymin -= pad
+                pad = max(0.10 * (ymax - ymin), 0.5)
+                ymin -= pad;
                 ymax += pad
 
-                # choose nice steps
+                # --- Step 3: Create axes based on global bounds ---
                 x_step = _nice_step(lesson.x_max - lesson.x_min, target_ticks=8)
                 y_step = _nice_step(ymax - ymin, target_ticks=6)
 
                 axes = Axes(
                     x_range=[lesson.x_min, lesson.x_max, x_step],
                     y_range=[ymin, ymax, y_step],
-                    x_length=8,
-                    y_length=4.5,
-                    tips=False,
+                    x_length=8, y_length=4.5, tips=False,
                     axis_config={"include_numbers": True, "font_size": 24},
                 ).to_edge(DOWN).shift(DOWN * 0.2)
 
                 self.play(Create(axes), run_time=0.8)
 
-                # NaN-safe scalar wrapper (manim samples scalar t)
-                def f_scalar(t):
-                    try:
-                        val = f(float(t))
-                        return float(val) if np.isfinite(val) else np.nan
-                    except Exception:
-                        return np.nan
+                # --- Step 4: Plot each function sequentially ---
+                labels_group = VGroup()
+                for plot in parsed_plots:
+                    def f_scalar(t, func=plot["func"]):  # Capture func in closure
+                        try:
+                            val = func(float(t))
+                            return float(val) if np.isfinite(val) else np.nan
+                        except Exception:
+                            return np.nan
 
-                graph = axes.plot(
-                    f_scalar,
-                    x_range=[lesson.x_min, lesson.x_max],
-                    discontinuities=np.where(~np.isfinite(ys))[0] / max(len(xs) - 1, 1),  # optional aesthetic hint
-                    stroke_width=4,
-                )
+                    graph = axes.plot(
+                        f_scalar, x_range=[lesson.x_min, lesson.x_max],
+                        stroke_width=4, color=plot["color"]
+                    )
 
-                label = MathTex(r"f(x) = " + lesson.function_tex, font_size=32).next_to(axes, UP)
-                self.play(Create(graph), FadeIn(label), run_time=1.2)
+                    label = MathTex(plot["label_tex"], font_size=32, color=plot["color"])
+                    labels_group.add(label)
+
+                    self.play(Create(graph), Write(label), run_time=1.2)
+                    self.wait(0.2)
+
+                # Arrange labels nicely
+                labels_group.arrange(RIGHT, buff=0.4).next_to(axes, UP, buff=0.2)
+                self.play(labels_group.animate)
                 self.wait(0.5)
 
             except Exception as e:
