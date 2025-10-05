@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import ProgressiveTextGenerator from "./ProgressiveTextGenerator";
+import MathText from "./MathText";
 
 interface HintSlideInProps {
   isVisible: boolean;

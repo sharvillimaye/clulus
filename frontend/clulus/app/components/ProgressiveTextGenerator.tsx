@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { GoogleGenAI } from "@google/genai";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import MathVideoPlayer from "./MathVideoPlayer";
+import MathText from "./MathText";
 
 interface ProgressiveTextGeneratorProps {
   difficulty: "easy" | "medium" | "hard";
@@ -177,7 +178,7 @@ MATH QUESTION: "${customQuestion}"
 
 FORMAT (copy exactly):
 <hint>Write a helpful 2 sentence hint that guides the student WITHOUT giving away the answer, focus on helping develop intuition and problem-solving skills. Use LaTeX for math expressions.</hint>
-<audio_script>Write a detailed 3-4 sentence audio explanation that auditory learners can listen to. This should be more comprehensive than the hint and explain the problem step-by-step in a conversational tone. Use natural language, avoid LaTeX, and make it sound like a friendly tutor speaking directly to the student.</audio_script>
+<audio_script>Write a detailed 3-4 sentence audio explanation that auditory learners can listen to. This should be more comprehensive than the hint and explain the problem step-by-step in a conversational tone. Use natural language, do NOT use any LaTeX or unusual symbols that cannot be pronounced by a text to speech engine, and make it sound like a friendly tutor speaking directly to the student.</audio_script>
 <question>Write the exact mathematical question, keeping all essential information to solve the problem, keep it as concise as possible. Use LaTeX notation for mathematical expressions.</question>
 RESPONSE:`
         : `You are an expert math tutor. Analyze the attached screenshot of a math problem and generate exactly THREE tags in this specific format.
@@ -188,7 +189,7 @@ INSTRUCTIONS:
 - Generate exactly 3 tags: <hint>, <audio_script>, and <question>
 - Don't repeat tags or create multiple instances
 - Keep responses concise and helpful
-- Use LaTeX notation for mathematical expressions (e.g., $x^2$, $\\frac{a}{b}$, $\\int_0^1 f(x) dx$)
+- Use LaTeX notation for mathematical expressions (e.g., $x^2$, $\\frac{a}{b}$, $\\int_0^1 f(x) dx$) except for the audio script, where no LaTex is permitted.
 
 FORMAT (copy exactly):
 <hint>Write a helpful 2 sentence hint that guides the student WITHOUT giving away the answer, focus on helping develop intuition and problem-solving skills. Use LaTeX for math expressions.</hint>
@@ -378,7 +379,7 @@ RESPONSE:`;
             </div>
           ) : displayedText ? (
             <div className="whitespace-pre-wrap">
-              <h1>{displayedText}</h1>
+              <MathText>{displayedText}</MathText>
               {isGenerating && displayedText.length < fullText.length && (
                 <span className="animate-pulse">|</span>
               )}
