@@ -13,8 +13,10 @@ interface MathProblem {
 
 export default function MathQuestion({
   setQContent,
+  onTimeUp,
 }: {
   setQContent: (content: MathProblem) => void;
+  onTimeUp?: (up: boolean) => void;
 }) {
   const [currentProblem, setCurrentProblem] = useState<MathProblem | null>(
     null
@@ -85,6 +87,8 @@ export default function MathQuestion({
     setShowResult(false);
     setTimeLeft(30);
     setIsTimerActive(true);
+    // Notify parent that timer is reset / not up
+    if (onTimeUp) onTimeUp(false);
   };
 
   const handleAnswerSelect = (answer: number | string) => {
@@ -97,6 +101,9 @@ export default function MathQuestion({
 
     setShowResult(true);
     setIsTimerActive(false);
+
+    // Notify parent that timer is no longer up (submission handled)
+    if (onTimeUp) onTimeUp(false);
 
     if (currentProblem && selectedAnswer === currentProblem.answer) {
       setScore((prev) => prev + 1);
@@ -118,7 +125,8 @@ export default function MathQuestion({
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (timeLeft === 0 && !showResult) {
-      // Time's up - auto submit
+      // Time's up - notify parent and auto submit
+      if (onTimeUp) onTimeUp(true);
       handleSubmit();
     }
 

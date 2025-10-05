@@ -15,6 +15,7 @@ interface MathProblem {
 
 export default function Home() {
   const [showHint, setShowHint] = useState(false);
+  const [timeUp, setTimeUp] = useState(false);
   const [qContent, setQContent] = useState<MathProblem | null>(null);
   const [screenshot, setScreenshot] = useState<string>("");
   const [hoverProgress, setHoverProgress] = useState(0);
@@ -68,8 +69,10 @@ export default function Home() {
           "Screenshot captured successfully:",
           screenshotDataUrl.substring(0, 50) + "..."
         );
-        // Only show hint after screenshot is captured
-        setShowHint(true);
+  // Only show hint after screenshot is captured
+  setShowHint(true);
+  // Clear the timeUp highlight when the hint opens
+  setTimeUp(false);
       } catch (error) {
         console.error("Error capturing screenshot:", error);
         setScreenshot("");
@@ -87,6 +90,8 @@ export default function Home() {
     // Reset hover state when hint is closed
     setIsHovering(false);
     setHoverProgress(0);
+    // Clear any timeUp highlight when closing
+    setTimeUp(false);
   };
 
   const handleAcceptHint = () => {};
@@ -251,7 +256,10 @@ export default function Home() {
         {/* Main Content Area - Math Question */}
         <div className="flex-1 flex items-center justify-center p-8">
           {questionMode === "predefined" ? (
-            <MathQuestion setQContent={(content) => setQContent(content)} />
+            <MathQuestion
+              setQContent={(content) => setQContent(content)}
+              onTimeUp={(up) => setTimeUp(up)}
+            />
           ) : customQuestionSubmitted && qContent ? (
             <div className="w-full max-w-2xl mx-auto" data-math-component>
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
@@ -296,16 +304,22 @@ export default function Home() {
           <div
             className={`relative w-16 h-16 group ${
               showHint ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            } ${
+              timeUp && !showHint
+                ? "animate-pulse-shadow"
+                : ""
             }`}
             onMouseEnter={showHint ? undefined : handleMouseEnter}
             onMouseLeave={showHint ? undefined : handleMouseLeave}
           >
             {/* Background Circle */}
             <div
-              className={`absolute inset-0 bg-blue-500/20 rounded-full transition-all duration-300 ${
-                showHint
-                  ? ""
-                  : "group-hover:bg-blue-500/30 group-hover:scale-110"
+              className={`absolute inset-0 rounded-full transition-all duration-300 ${
+                timeUp && !showHint
+                  ? "bg-yellow-400/30 ring-4 ring-yellow-300/50 scale-105"
+                  : showHint
+                  ? "bg-blue-500/20"
+                  : "bg-blue-500/20 group-hover:bg-blue-500/30 group-hover:scale-110"
               }`}
             ></div>
 
